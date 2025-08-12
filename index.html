@@ -3,800 +3,531 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Record App</title>
-    <!-- Tailwind CSS for styling -->
+    <title>Employee Records</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Use Inter font for a modern look -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
         }
-        /* Custom modal styles */
-        .modal {
-            display: none; /* Hidden by default */
+        .modal-overlay {
             position: fixed;
-            z-index: 1000;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
-            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
             justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
         .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 90%;
+            width: 450px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             position: relative;
-        }
-        .close-button {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            font-size: 24px;
-            font-weight: bold;
-            color: #aaa;
-        }
-        .close-button:hover,
-        .close-button:focus {
-            color: #000;
-            text-decoration: none;
-            cursor: pointer;
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
+<body class="bg-gray-100 p-4 sm:p-6 lg:p-8">
 
-    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-4xl mx-auto my-8">
+    <!-- Main Application Container -->
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-7xl mx-auto p-4 sm:p-8">
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Employee Records</h1>
 
-        <!-- Container for action buttons -->
-        <div class="flex justify-center space-x-4 mb-6">
-            <!-- Button to log in as admin -->
-            <button id="adminButton" disabled
-                    class="bg-gray-500 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-200">
-                Admin
+        <!-- Error Message Display -->
+        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span id="error-text" class="block sm:inline ml-2"></span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+            <button id="admin-toggle-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" id="admin-icon">
+                    <path d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM20 21a8 8 0 1 0-16 0M22 17v-3M19 14v3"></path>
+                </svg>
+                <span id="admin-toggle-text">Login Admin</span>
             </button>
-            <!-- Button to log out of admin mode -->
-            <button id="logoutButton"
-                    class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-200 hidden">
-                Logout
-            </button>
-            <!-- Button to show the form for adding a new employee (now functional for all users) -->
-            <button id="newEmployeeButton" disabled
-                    class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-200">
-                New Employee
+            <button id="new-employee-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                    <path d="M18 10a3 3 0 0 0-3-3h-2V3"></path><path d="M7 10v-2"></path><path d="M12 17v-2"></path><path d="M10 17v-2"></path><path d="M10 15h2"></path><path d="M7 17v-2"></path><path d="M5 21V9a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"></path><path d="M14 21v-2"></path><path d="M14 17h-2"></path><path d="M16 21v-2"></path><path d="M16 17v-2"></path><path d="M7 21h2"></path><path d="M12 21v-2"></path>
+                </svg>
+                <span>New Employee</span>
             </button>
         </div>
 
-        <!-- Form for adding and updating employees -->
-        <div id="employeeFormContainer" class="hidden mb-8 p-6 bg-gray-50 rounded-xl">
-            <h2 id="formTitle" class="text-xl font-semibold mb-4">Add Employee</h2>
-            <form id="employeeForm" class="space-y-4">
-                <!-- Employee ID is now a hidden field for updates -->
-                <input type="hidden" id="employeeId" name="employeeId">
+        <!-- Employee Form Section -->
+        <div id="employee-form-container" class="p-6 bg-gray-50 rounded-xl hidden">
+            <h2 id="form-title" class="text-xl font-semibold mb-4 text-center">Add New Employee</h2>
+            <form id="employee-form" class="space-y-4">
                 <div>
                     <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
-                    <input type="text" id="name" placeholder="Employee's Full Name"
-                           class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" required>
+                    <input type="text" id="name" name="name" class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" placeholder="Employee's Full Name" required>
                 </div>
                 <div>
                     <label for="department" class="block text-sm font-medium text-gray-700">Department</label>
-                    <input type="text" id="department" placeholder="e.g., Engineering, Sales"
-                           class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" required>
+                    <input type="text" id="department" name="department" class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" placeholder="e.g., Engineering, Sales" required>
                 </div>
                 <div>
                     <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
-                    <input type="text" id="role" placeholder="e.g., Software Engineer"
-                           class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" required>
+                    <input type="text" id="role" name="role" class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" placeholder="e.g., Software Engineer" required>
                 </div>
                 <div>
                     <label for="employeeImageInput" class="block text-sm font-medium text-gray-700">Employee Image</label>
-                    <input type="file" id="employeeImageInput" accept="image/*"
-                           class="mt-1 block w-full text-sm text-gray-500
-                                  file:mr-4 file:py-2 file:px-4
-                                  file:rounded-lg file:border-0
-                                  file:text-sm file:font-semibold
-                                  file:bg-blue-50 file:text-blue-700
-                                  hover:file:bg-blue-100"/>
-                    <div class="mt-4 flex justify-center">
-                        <img id="imagePreview" src="" alt="Image Preview" class="hidden w-24 h-24 rounded-full object-cover border-2 border-gray-300">
+                    <input type="file" id="employeeImageInput" name="employeeImage" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <div id="image-preview-container" class="mt-4 flex justify-center hidden">
+                        <img id="image-preview" src="" alt="Preview" class="w-24 h-24 rounded-full object-cover border-2 border-gray-300">
                     </div>
                 </div>
                 <div class="flex space-x-4">
-                    <button type="button" id="addButton"
-                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200">
-                        Add Employee
+                    <button type="submit" id="submit-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                        <span id="submit-btn-text">Add Employee</span>
                     </button>
-                    <button type="button" id="updateButton"
-                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200 hidden">
-                        Update Employee
-                    </button>
-                    <button type="button" id="cancelButton"
-                            class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200">
-                        Cancel
+                    <button type="button" id="cancel-btn" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                        <span>Cancel</span>
                     </button>
                 </div>
+                <div id="status-message" class="text-center text-sm"></div>
             </form>
-            <div id="statusMessage" class="mt-4 text-center text-sm font-medium text-gray-600 hidden"></div>
         </div>
 
-        <!-- Table for displaying employee records -->
-        <div id="employeeTableContainer" class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 shadow-lg rounded-xl">
+        <!-- Employee Table Section -->
+        <div id="employee-table-container" class="overflow-x-auto shadow-lg rounded-xl">
+            <table class="min-w-full divide-y divide-gray-200 rounded-xl">
                 <thead class="bg-gray-100">
                     <tr>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-xl">Employee ID</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Full Name</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-xl">ID</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                        <th id="actionsHeader" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-xl hidden">Actions</th>
+                        <th id="admin-actions-header" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-xl hidden">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="employeeTableBody" class="bg-white divide-y divide-gray-200">
-                    <!-- Employee records will be dynamically inserted here -->
+                <tbody id="employee-table-body" class="bg-white divide-y divide-gray-200">
+                    <tr><td colspan="6" class="text-center py-4 text-gray-500">Loading employees...</td></tr>
                 </tbody>
             </table>
-            <p class="text-center text-gray-400 mt-4" id="loadingMessage">Initializing app...</p>
         </div>
     </div>
-    
-    <!-- Custom Modal for Admin Password -->
-    <div id="adminModal" class="modal">
-        <div class="modal-content bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full text-center">
-            <span id="closeAdminModal" class="close-button">&times;</span>
-            <h3 class="text-xl font-bold mb-4">Admin Login</h3>
-            <p class="mb-4 text-gray-700">Enter the admin password to enable editing features.</p>
-            <input type="password" id="adminPasswordInput" placeholder="Password"
-                   class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm mb-4">
-            <button id="adminLoginButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
-                Log In
-            </button>
-        </div>
-    </div>
-    
-    <!-- Custom Modal for Delete Confirmation -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
-            <h3 class="text-xl font-bold mb-4">Confirm Delete</h3>
+
+    <!-- Modals (Initially Hidden) -->
+    <div id="delete-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold mb-4 text-center">Confirm Delete</h3>
             <p class="mb-4 text-gray-700">Are you sure you want to delete this employee record? This action cannot be undone.</p>
             <div class="flex justify-end space-x-4">
-                <button id="cancelDeleteButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">
-                    Cancel
-                </button>
-                <button id="confirmDeleteButton" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">
-                    Delete
-                </button>
+                <button id="cancel-delete-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Delete</button>
             </div>
         </div>
     </div>
 
-    <!-- New Modal for Employee Details -->
-    <div id="detailsModal" class="modal">
-        <div class="modal-content bg-white p-8 rounded-2xl shadow-2xl max-w-lg w-full text-center">
-            <span id="closeDetailsModal" class="close-button">&times;</span>
-            <h3 id="detailsName" class="text-2xl font-bold mb-4"></h3>
-            <div class="flex flex-col items-center mb-6">
-                <img id="detailsImage" src="" alt="Employee Image" class="w-40 h-40 rounded-full object-cover border-4 border-blue-200 mb-4">
-                <p id="detailsId" class="text-lg font-medium text-gray-600"></p>
+    <div id="details-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold mb-4 text-center">Employee Details</h3>
+            <div id="details-content" class="text-center">
+                <!-- Employee details will be inserted here dynamically -->
             </div>
-            <div class="text-left space-y-2">
-                <p class="text-gray-700"><span class="font-semibold">Department:</span> <span id="detailsDepartment"></span></p>
-                <p class="text-gray-700"><span class="font-semibold">Role:</span> <span id="detailsRole"></span></p>
+            <div class="flex justify-center mt-6">
+                <button id="close-details-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Password Modal -->
+    <div id="password-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold mb-4 text-center">Admin Login</h3>
+            <p class="text-sm text-gray-500 mb-4 text-center">Enter the admin password to unlock management features.</p>
+            <div class="mb-4">
+                <input type="password" id="admin-password-input" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" placeholder="Enter password">
+                <div id="password-error" class="text-red-500 text-sm mt-2 hidden">Incorrect password. Please try again.</div>
+            </div>
+            <div class="flex justify-end space-x-4">
+                <button id="cancel-password-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="login-password-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Login</button>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- App Logic -->
+    <script>
+        let isAdmin = false;
+        let employeeToEdit = null;
+        const localStorageKey = 'employeeRecords';
+        const adminPassword = 'admin123'; // Hardcoded admin password
 
-        // Global variables provided by the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        let db;
-        let auth;
-        let userId;
-        let isAdminAuthenticated = false; // State variable for admin authentication
-        let employeesData = []; // Cache the employee data
-        let isFirebaseReady = false; // New state variable to track Firebase initialization
-        const ADMIN_PASSWORD = 'admin123'; // Hardcoded password for this example
+        // Function to display errors
+        function showError(message) {
+            const errorMessageDiv = document.getElementById('error-message');
+            const errorTextSpan = document.getElementById('error-text');
+            errorTextSpan.textContent = message;
+            errorMessageDiv.classList.remove('hidden');
+        }
 
-        // Get references to UI elements
-        const employeeFormContainer = document.getElementById('employeeFormContainer');
-        const employeeTableContainer = document.getElementById('employeeTableContainer');
-        const employeeForm = document.getElementById('employeeForm');
-        const adminButton = document.getElementById('adminButton');
-        const logoutButton = document.getElementById('logoutButton');
-        const newEmployeeButton = document.getElementById('newEmployeeButton');
-        const cancelButton = document.getElementById('cancelButton');
-        const formTitle = document.getElementById('formTitle');
-        const employeeIdInput = document.getElementById('employeeId');
-        const nameInput = document.getElementById('name');
-        const departmentInput = document.getElementById('department');
-        const roleInput = document.getElementById('role');
-        const employeeImageInput = document.getElementById('employeeImageInput');
-        const imagePreview = document.getElementById('imagePreview');
-        const addButton = document.getElementById('addButton');
-        const updateButton = document.getElementById('updateButton');
-        const employeeTableBody = document.getElementById('employeeTableBody');
-        const statusMessage = document.getElementById('statusMessage');
-        const loadingMessage = document.getElementById('loadingMessage');
-        const deleteModal = document.getElementById('deleteModal');
-        const cancelDeleteButton = document.getElementById('cancelDeleteButton');
-        const confirmDeleteButton = document.getElementById('confirmDeleteButton');
-        const detailsModal = document.getElementById('detailsModal');
-        const closeDetailsModalButton = document.getElementById('closeDetailsModal');
-        const actionsHeader = document.getElementById('actionsHeader');
-        
-        // Admin modal elements
-        const adminModal = document.getElementById('adminModal');
-        const adminPasswordInput = document.getElementById('adminPasswordInput');
-        const adminLoginButton = document.getElementById('adminLoginButton');
-        const closeAdminModalButton = document.getElementById('closeAdminModal');
-        
-        let employeeIdToDelete = null;
+        // Function to hide errors
+        function hideError() {
+            const errorMessageDiv = document.getElementById('error-message');
+            errorMessageDiv.classList.add('hidden');
+        }
 
-        // Function to initialize the app
-        async function initApp() {
-            console.log("Attempting to initialize Firebase...");
-            loadingMessage.textContent = 'Connecting to database...';
-
-            // Check if firebaseConfig is valid
-            if (Object.keys(firebaseConfig).length === 0) {
-                console.error("Error: Firebase configuration is missing or invalid.");
-                loadingMessage.textContent = 'Error: Firebase configuration is missing. Please check your settings.';
-                loadingMessage.classList.add('text-red-600');
-                return;
-            }
-
+        // Function to get data from local storage
+        function getEmployeesFromStorage() {
             try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                console.log("Firebase initialized successfully.");
-
-                // Set up authentication listener
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        // User is signed in.
-                        userId = user.uid;
-                        isFirebaseReady = true;
-
-                        // Start listening for real-time data updates
-                        listenForEmployees();
-                        
-                        // Enable buttons once Firebase is ready
-                        newEmployeeButton.disabled = false;
-                        adminButton.disabled = false;
-                        
-                        // Clear loading message and show table
-                        loadingMessage.style.display = 'none';
-
-                    } else {
-                        // User is signed out. Sign in with the custom token or anonymously.
-                        try {
-                            if (initialAuthToken) {
-                                await signInWithCustomToken(auth, initialAuthToken);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        } catch (error) {
-                            console.error("Authentication failed:", error);
-                            loadingMessage.textContent = 'Authentication failed. Please refresh the page.';
-                            loadingMessage.classList.add('text-red-600');
-                        }
-                    }
-                });
-
-            } catch (error) {
-                console.error("Firebase initialization failed:", error);
-                loadingMessage.textContent = 'Error: Failed to connect to database.';
-                loadingMessage.classList.add('text-red-600');
+                const employees = localStorage.getItem(localStorageKey);
+                return employees ? JSON.parse(employees) : [];
+            } catch (err) {
+                showError("Error reading from local storage. Data may be corrupted.");
+                return [];
             }
         }
-        
-        // Call the initialization function
-        initApp();
 
-
-        /**
-         * Displays a status message to the user.
-         * @param {string} text The message to display.
-         * @param {string} color The Tailwind CSS color class for the text.
-         */
-        function showStatus(text, color) {
-            statusMessage.textContent = text;
-            statusMessage.className = `mt-4 text-center text-sm font-medium ${color}`;
-            statusMessage.style.display = 'block';
+        // Function to save data to local storage
+        function saveEmployeesToStorage(employees) {
+            try {
+                localStorage.setItem(localStorageKey, JSON.stringify(employees));
+            } catch (err) {
+                showError("Error writing to local storage. Data may not be saved.");
+            }
         }
 
-        /**
-         * Clears all input fields and the image preview in the form.
-         */
-        function clearFormInputs() {
-            employeeIdInput.value = '';
-            nameInput.value = '';
-            departmentInput.value = '';
-            roleInput.value = '';
-            employeeImageInput.value = '';
-            imagePreview.src = '';
-            imagePreview.classList.add('hidden');
+        // Function to generate a random 6-digit numeric ID starting with 101
+        function generateUniqueId() {
+            const employees = getEmployeesFromStorage();
+            const existingIds = new Set(employees.map(e => e.id));
+            let newId = '';
+            let attempts = 0;
+            const maxAttempts = 1000; // Limit attempts to prevent infinite loops if all IDs are taken
+
+            do {
+                // Generate a random number from 0 to 999
+                const randomSuffix = Math.floor(Math.random() * 1000);
+                // Pad with leading zeros to ensure it's always three digits
+                const suffixString = String(randomSuffix).padStart(3, '0');
+                newId = `101${suffixString}`;
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    showError("Could not generate a unique employee ID. All 101-prefixed IDs are in use.");
+                    return null;
+                }
+            } while (existingIds.has(newId));
+
+            return newId;
         }
 
-        /**
-         * Hides the form and resets the buttons.
-         */
-        function hideForm() {
-            employeeFormContainer.classList.add('hidden');
-            employeeTableContainer.classList.remove('hidden'); // Show table again
-        }
-        
-        /**
-         * Shows the form for a new employee. Hides the table.
-         */
-        function showForm() {
-            employeeFormContainer.classList.remove('hidden');
-            employeeTableContainer.classList.add('hidden'); // Hide table
-        }
-
-
-        /**
-         * Renders the employee table based on the current data and admin authentication state.
-         */
-        function renderEmployees() {
+        // Function to render the employee table
+        function renderEmployees(employees, isAdminMode) {
+            const employeeTableBody = document.getElementById('employee-table-body');
+            const adminActionsHeader = document.getElementById('admin-actions-header');
             employeeTableBody.innerHTML = '';
-            loadingMessage.style.display = employeesData.length > 0 ? 'none' : 'block';
-            if (employeesData.length === 0) {
-                loadingMessage.textContent = 'No employees found.';
-            }
-
-            // Show/hide the "Actions" header and buttons based on admin authentication
-            if (isAdminAuthenticated) {
-                actionsHeader.classList.remove('hidden');
+            
+            if (isAdminMode) {
+                adminActionsHeader.classList.remove('hidden');
             } else {
-                actionsHeader.classList.add('hidden');
+                adminActionsHeader.classList.add('hidden');
             }
 
-            employeesData.forEach(doc => {
-                const employeeData = doc.data;
-                const actionButtons = isAdminAuthenticated ? 
-                    `<div class="flex space-x-2 justify-center">
-                        <button onclick="editEmployee('${doc.id}')"
-                                class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded-lg text-sm transition-colors duration-200">
-                            Edit
-                        </button>
-                        <button onclick="showDeleteModal('${doc.id}')"
-                                class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-lg text-sm transition-colors duration-200">
-                            Delete
-                        </button>
-                    </div>` : '';
-
-                const employeeRow = `
-                    <tr class="hover:bg-gray-50 transition-colors duration-200">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">${doc.id}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employeeData.name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employeeData.department}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employeeData.role}</td>
+            if (!employees || employees.length === 0) {
+                employeeTableBody.innerHTML = `<tr><td colspan="${isAdminMode ? 6 : 5}" class="text-center py-4 text-gray-500">No employees found.</td></tr>`;
+            } else {
+                employees.forEach(employee => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 transition-colors duration-200';
+                    let actionButtonsHtml = '';
+                    if (isAdminMode) {
+                        actionButtonsHtml = `
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                <div class="flex space-x-2 justify-center">
+                                    <button class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded-lg text-sm transition-colors duration-200 flex items-center space-x-1" data-id="${employee.id}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="delete-btn bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-lg text-sm transition-colors duration-200 flex items-center space-x-1" data-id="${employee.id}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                        <span>Delete</span>
+                                    </button>
+                                </div>
+                            </td>
+                        `;
+                    }
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">${employee.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employee.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employee.department}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employee.role}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                            <button onclick="showEmployeeDetailsModal('${doc.id}')"
-                                    class="text-blue-600 hover:text-blue-800 transition-colors duration-200 font-semibold">
-                                View Details
+                            <button class="view-details-btn text-blue-600 hover:text-blue-800 transition-colors duration-200 font-semibold flex items-center space-x-1 mx-auto" data-id="${employee.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                <span>View Details</span>
                             </button>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium ${isAdminAuthenticated ? '' : 'hidden'}">
-                            ${actionButtons}
-                        </td>
-                    </tr>
-                `;
-                employeeTableBody.innerHTML += employeeRow;
-            });
-        }
-        
-        /**
-         * Shows the admin password modal.
-         */
-        adminButton.addEventListener('click', () => {
-            adminModal.style.display = 'flex';
-        });
-
-        /**
-         * Checks the password and enables admin features if correct.
-         */
-        adminLoginButton.addEventListener('click', () => {
-            const password = adminPasswordInput.value;
-            if (password === ADMIN_PASSWORD) {
-                isAdminAuthenticated = true;
-                adminButton.classList.add('hidden');
-                logoutButton.classList.remove('hidden');
-                renderEmployees();
-                showStatus('Admin privileges granted!', 'text-green-600');
-                adminModal.style.display = 'none';
-            } else {
-                isAdminAuthenticated = false;
-                showStatus('Incorrect password. Admin privileges denied.', 'text-red-600');
-                adminPasswordInput.value = ''; // Clear the password input
+                        ${actionButtonsHtml}
+                    `;
+                    employeeTableBody.appendChild(row);
+                });
             }
-        });
-
-        /**
-         * Logs out of admin mode and returns to normal user view.
-         */
-        logoutButton.addEventListener('click', () => {
-            isAdminAuthenticated = false;
-            adminButton.classList.remove('hidden');
-            logoutButton.classList.add('hidden');
-            hideForm(); // Ensure form is hidden and table is visible
-            renderEmployees();
-            showStatus('Logged out of admin mode.', 'text-gray-600');
-        });
-        
-        // Event listener to close the admin modal
-        closeAdminModalButton.addEventListener('click', () => {
-            adminModal.style.display = 'none';
-            adminPasswordInput.value = '';
-        });
-        
-        /**
-         * Shows the form for a new employee. This is now accessible to all users.
-         */
-        newEmployeeButton.addEventListener('click', () => {
-            // Check if Firebase is ready before showing the form
-            if (!isFirebaseReady) {
-                showStatus('Connecting to database... please wait.', 'text-gray-600');
-                return;
-            }
-            showForm(); // Show form, hide table
-            formTitle.textContent = 'Add Employee';
-            addButton.classList.remove('hidden');
-            updateButton.classList.add('hidden');
-            clearFormInputs();
-            showStatus('', '');
-        });
-
-        /**
-         * Cancels the current form action and hides the form.
-         */
-        cancelButton.addEventListener('click', () => {
-            clearFormInputs();
-            hideForm(); // Hide form, show table
-        });
-
-        // Event listener to display a preview of the selected image
-        employeeImageInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    imagePreview.src = e.target.result;
-                    imagePreview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                imagePreview.src = '';
-                imagePreview.classList.add('hidden');
-            }
-        });
-
-        /**
-         * Listens for real-time changes to the 'employees' collection.
-         */
-        function listenForEmployees() {
-            if (!isFirebaseReady) return; // Guard against uninitialized state
-
-            const employeesCollectionRef = collection(db, `artifacts/${appId}/public/data/employees`);
-            
-            onSnapshot(employeesCollectionRef, (snapshot) => {
-                // Cache the data
-                employeesData = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-                renderEmployees();
-            }, (error) => {
-                console.error("Error listening to employees:", error);
-                loadingMessage.textContent = 'Error: Failed to load employee data.';
-                loadingMessage.classList.add('text-red-600');
-            });
         }
 
-        /**
-         * Generates a unique 6-digit numeric ID.
-         * @returns {Promise<string>} A promise that resolves with a unique 6-digit ID.
-         */
-        async function generateUniqueNumericId() {
-            if (!isFirebaseReady) throw new Error("Firebase not initialized.");
-            
-            let isUnique = false;
-            let employeeId;
-            const employeesCollectionRef = collection(db, `artifacts/${appId}/public/data/employees`);
+        // Main app initialization function
+        function initApp() {
+            // DOM Element References
+            const adminToggleBtn = document.getElementById('admin-toggle-btn');
+            const adminToggleText = document.getElementById('admin-toggle-text');
+            const adminIcon = document.getElementById('admin-icon');
+            const newEmployeeBtn = document.getElementById('new-employee-btn');
+            const employeeTableBody = document.getElementById('employee-table-body');
+            const employeeFormContainer = document.getElementById('employee-form-container');
+            const employeeTableContainer = document.getElementById('employee-table-container');
+            const employeeForm = document.getElementById('employee-form');
+            const formTitle = document.getElementById('form-title');
+            const submitBtnText = document.getElementById('submit-btn-text');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const statusMessageDiv = document.getElementById('status-message');
+            const imageInput = document.getElementById('employeeImageInput');
+            const imagePreviewContainer = document.getElementById('image-preview-container');
+            const imagePreview = document.getElementById('image-preview');
+            const deleteModal = document.getElementById('delete-modal');
+            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            const detailsModal = document.getElementById('details-modal');
+            const detailsContent = document.getElementById('details-content');
+            const closeDetailsBtn = document.getElementById('close-details-btn');
+            const passwordModal = document.getElementById('password-modal');
+            const passwordInput = document.getElementById('admin-password-input');
+            const passwordError = document.getElementById('password-error');
+            const loginPasswordBtn = document.getElementById('login-password-btn');
+            const cancelPasswordBtn = document.getElementById('cancel-password-btn');
 
-            while (!isUnique) {
-                // Generate a random 6-digit number
-                employeeId = Math.floor(100000 + Math.random() * 900000).toString();
-                
-                // Check if the ID already exists in the database
-                const docRef = doc(employeesCollectionRef, employeeId);
-                const docSnap = await getDoc(docRef);
-
-                if (!docSnap.exists()) {
-                    isUnique = true;
-                }
-            }
-            return employeeId;
-        }
-
-        /**
-         * Converts a file to a Base64 string.
-         * @param {File} file The file to convert.
-         * @returns {Promise<string|null>} A promise that resolves with the Base64 string, or null if no file.
-         */
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                if (!file) {
-                    resolve(null);
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = (error) => reject(error);
-                reader.readAsDataURL(file);
-            });
-        }
-
-        /**
-         * Adds a new employee document to Firestore with a generated ID.
-         * This function is now accessible to all users.
-         */
-        addButton.addEventListener('click', async () => {
-            if (!isFirebaseReady) {
-                showStatus('Connecting to database... please wait.', 'text-red-600');
-                return;
-            }
-
-            const name = nameInput.value;
-            const department = departmentInput.value;
-            const role = roleInput.value;
-            const imageFile = employeeImageInput.files[0];
-
-            if (!name || !department || !role) {
-                showStatus('Please fill in all fields.', 'text-red-600');
-                return;
-            }
-
-            showStatus('Adding employee...', 'text-gray-600');
-
-            try {
-                // Generate a unique numeric ID for the new employee
-                const employeeId = await generateUniqueNumericId();
-                const imageBase64 = await fileToBase64(imageFile);
-
-                const newEmployee = {
-                    name: name,
-                    department: department,
-                    role: role,
-                    employeeImage: imageBase64
-                };
-
-                const employeeDocRef = doc(db, `artifacts/${appId}/public/data/employees`, employeeId);
-                await setDoc(employeeDocRef, newEmployee);
-                showStatus('Employee added successfully!', 'text-green-600');
-                clearFormInputs();
-                hideForm(); // Hide form, show table
-            } catch (error) {
-                console.error("Error adding employee:", error);
-                showStatus(`Error adding employee: ${error.message}`, 'text-red-600');
-            }
-        });
-
-        /**
-         * Updates an existing employee document in Firestore.
-         */
-        updateButton.addEventListener('click', async () => {
-            if (!isFirebaseReady) {
-                showStatus('Connecting to database... please wait.', 'text-red-600');
-                return;
-            }
-            if (!isAdminAuthenticated) {
-                showStatus('You must be an authenticated admin to perform this action.', 'text-red-600');
-                return;
-            }
-            
-            const employeeId = employeeIdInput.value;
-            const name = nameInput.value;
-            const department = departmentInput.value;
-            const role = roleInput.value;
-            const imageFile = employeeImageInput.files[0];
-
-            if (!employeeId || !name || !department || !role) {
-                showStatus('Please fill in all fields to update.', 'text-red-600');
-                return;
-            }
-
-            showStatus('Updating employee...', 'text-gray-600');
-
-            try {
-                let imageBase64 = imagePreview.src.startsWith('data:image') ? imagePreview.src : '';
-                if (imageFile) {
-                    imageBase64 = await fileToBase64(imageFile);
-                }
-
-                const updatedEmployee = {
-                    name: name,
-                    department: department,
-                    role: role,
-                    employeeImage: imageBase64 || null
-                };
-
-                const employeeDocRef = doc(db, `artifacts/${appId}/public/data/employees`, employeeId);
-                await setDoc(employeeDocRef, updatedEmployee);
-                showStatus('Employee updated successfully!', 'text-green-600');
-                clearFormInputs();
-                hideForm(); // Hide form, show table
-            } catch (error) {
-                console.error("Error updating employee:", error);
-                showStatus(`Error updating employee: ${error.message}`, 'text-red-600');
-            }
-        });
-
-        /**
-         * Fills the form with data from a selected employee for editing.
-         * @param {string} employeeId The ID of the employee to edit.
-         */
-        window.editEmployee = async (employeeId) => {
-            if (!isFirebaseReady) {
-                showStatus('Connecting to database... please wait.', 'text-red-600');
-                return;
-            }
-            if (!isAdminAuthenticated) {
-                showStatus('You must be an authenticated admin to perform this action.', 'text-red-600');
-                return;
-            }
-            
-            try {
-                showStatus('Fetching employee data for editing...', 'text-gray-600');
-                const docRef = doc(db, `artifacts/${appId}/public/data/employees`, employeeId);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    const employeeData = docSnap.data();
-                    showForm(); // Show form, hide table
-                    formTitle.textContent = `Update Employee: ${employeeId}`;
-                    addButton.classList.add('hidden');
-                    updateButton.classList.remove('hidden');
-
-                    employeeIdInput.value = docSnap.id;
-                    nameInput.value = employeeData.name;
-                    departmentInput.value = employeeData.department;
-                    roleInput.value = employeeData.role;
-
-                    if (employeeData.employeeImage) {
-                        imagePreview.src = employeeData.employeeImage;
-                        imagePreview.classList.remove('hidden');
+            // Function to show/hide the employee form
+            function showForm(employee = null) {
+                employeeToEdit = employee;
+                if (employee) {
+                    formTitle.textContent = 'Edit Employee';
+                    submitBtnText.textContent = 'Update Employee';
+                    employeeForm.name.value = employee.name;
+                    employeeForm.department.value = employee.department;
+                    employeeForm.role.value = employee.role;
+                    if (employee.employeeImage) {
+                        imagePreview.src = employee.employeeImage;
+                        imagePreviewContainer.classList.remove('hidden');
                     } else {
                         imagePreview.src = '';
-                        imagePreview.classList.add('hidden');
+                        imagePreviewContainer.classList.add('hidden');
                     }
-                    showStatus('Form pre-filled. You can now edit and click "Update Employee".', 'text-blue-600');
                 } else {
-                    showStatus('Employee not found.', 'text-red-600');
+                    formTitle.textContent = 'Add New Employee';
+                    submitBtnText.textContent = 'Add Employee';
+                    employeeForm.reset();
+                    imagePreview.src = '';
+                    imagePreviewContainer.classList.add('hidden');
                 }
-            } catch (error) {
-                console.error("Error fetching employee data:", error);
-                showStatus(`Error fetching data: ${error.message}`, 'text-red-600');
-            }
-        };
-
-        /**
-         * Displays the details of a selected employee in a modal.
-         * @param {string} employeeId The ID of the employee to view.
-         */
-        window.showEmployeeDetailsModal = async (employeeId) => {
-            if (!isFirebaseReady) {
-                showStatus('Connecting to database... please wait.', 'text-red-600');
-                return;
+                employeeTableContainer.classList.add('hidden');
+                employeeFormContainer.classList.remove('hidden');
+                hideError();
             }
 
-            try {
-                const docRef = doc(db, `artifacts/${appId}/public/data/employees`, employeeId);
-                const docSnap = await getDoc(docRef);
+            // Function to hide the form and show the table
+            function hideForm() {
+                employeeFormContainer.classList.add('hidden');
+                employeeTableContainer.classList.remove('hidden');
+                statusMessageDiv.textContent = '';
+                employeeToEdit = null;
+                renderEmployees(getEmployeesFromStorage(), isAdmin);
+            }
 
-                if (docSnap.exists()) {
-                    const employeeData = docSnap.data();
-                    document.getElementById('detailsName').textContent = employeeData.name;
-                    document.getElementById('detailsId').textContent = `ID: ${docSnap.id}`;
-                    document.getElementById('detailsDepartment').textContent = employeeData.department;
-                    document.getElementById('detailsRole').textContent = employeeData.role;
-                    document.getElementById('detailsImage').src = employeeData.employeeImage || 'https://placehold.co/160x160/e2e8f0/868e96?text=No+Img';
-                    detailsModal.style.display = 'flex';
+            // Event Listeners
+            adminToggleBtn.addEventListener('click', () => {
+                if (isAdmin) {
+                    // Log out
+                    isAdmin = false;
+                    adminToggleBtn.classList.replace('bg-red-500', 'bg-gray-500');
+                    adminToggleBtn.classList.replace('hover:bg-red-600', 'hover:bg-gray-600');
+                    adminToggleText.textContent = 'Login Admin';
+                    adminIcon.innerHTML = '<path d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM20 21a8 8 0 1 0-16 0M22 17v-3M19 14v3"></path>';
+                    renderEmployees(getEmployeesFromStorage(), isAdmin);
                 } else {
-                    showStatus('Employee details not found.', 'text-red-600');
+                    // Show password modal
+                    passwordModal.classList.remove('hidden');
+                    passwordInput.value = '';
+                    passwordError.classList.add('hidden');
                 }
-            } catch (error) {
-                console.error("Error fetching employee details:", error);
-                showStatus(`Error fetching details: ${error.message}`, 'text-red-600');
-            }
-        };
+            });
 
-        // Event listener to close the details modal
-        closeDetailsModalButton.addEventListener('click', () => {
-            detailsModal.style.display = 'none';
-        });
-
-        // Close modal when clicking outside of it
-        window.addEventListener('click', (event) => {
-            if (event.target == detailsModal || event.target == adminModal) {
-                event.target.style.display = 'none';
-                // Clear password input when closing the modal
-                if (event.target == adminModal) {
-                    adminPasswordInput.value = '';
+            loginPasswordBtn.addEventListener('click', () => {
+                if (passwordInput.value === adminPassword) {
+                    isAdmin = true;
+                    passwordModal.classList.add('hidden');
+                    adminToggleBtn.classList.replace('bg-gray-500', 'bg-red-500');
+                    adminToggleBtn.classList.replace('hover:bg-gray-600', 'hover:bg-red-600');
+                    adminToggleText.textContent = 'Logout Admin';
+                    adminIcon.innerHTML = '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path>';
+                    renderEmployees(getEmployeesFromStorage(), isAdmin);
+                } else {
+                    passwordError.classList.remove('hidden');
                 }
-            }
-        });
+            });
 
-        /**
-         * Deletes an employee document from Firestore.
-         */
-        const deleteEmployee = async (employeeId) => {
-            if (!isFirebaseReady) {
-                showStatus('Connecting to database... please wait.', 'text-red-600');
-                return;
-            }
-            if (!isAdminAuthenticated) {
-                showStatus('You must be an authenticated admin to perform this action.', 'text-red-600');
-                return;
-            }
+            cancelPasswordBtn.addEventListener('click', () => {
+                passwordModal.classList.add('hidden');
+                passwordError.classList.add('hidden');
+            });
+
+
+            newEmployeeBtn.addEventListener('click', () => {
+                showForm();
+            });
+
+            cancelBtn.addEventListener('click', hideForm);
+
+            imageInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        imagePreview.src = reader.result;
+                        imagePreviewContainer.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    imagePreview.src = employeeToEdit?.employeeImage || '';
+                    if (!imagePreview.src) {
+                        imagePreviewContainer.classList.add('hidden');
+                    }
+                }
+            });
+
+            employeeForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                statusMessageDiv.textContent = 'Saving employee...';
+
+                const formData = new FormData(employeeForm);
+                const name = formData.get('name');
+                const department = formData.get('department');
+                const role = formData.get('role');
+                const imageFile = formData.get('employeeImage');
+                
+                let imageBase64 = employeeToEdit?.employeeImage || '';
+
+                // Handle image file
+                const processAndSave = (imgData) => {
+                    let employees = getEmployeesFromStorage();
+                    if (employeeToEdit) {
+                        // Update existing employee
+                        const index = employees.findIndex(emp => emp.id === employeeToEdit.id);
+                        if (index !== -1) {
+                            employees[index] = { ...employees[index], name, department, role, employeeImage: imgData };
+                            saveEmployeesToStorage(employees);
+                            statusMessageDiv.textContent = 'Employee updated successfully!';
+                        }
+                    } else {
+                        // Add new employee
+                        const newId = generateUniqueId();
+                        if (newId) {
+                            employees.push({ id: newId, name, department, role, employeeImage: imgData });
+                            saveEmployeesToStorage(employees);
+                            statusMessageDiv.textContent = 'Employee added successfully!';
+                        } else {
+                            statusMessageDiv.textContent = 'Failed to add employee. All 101-prefixed IDs are in use.';
+                        }
+                    }
+                    setTimeout(() => hideForm(), 2000);
+                };
+
+                if (imageFile && imageFile.size > 0) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        imageBase64 = reader.result;
+                        processAndSave(imageBase64);
+                    };
+                    reader.readAsDataURL(imageFile);
+                } else {
+                    processAndSave(imageBase64);
+                }
+            });
+
+            // Event delegation for table actions
+            employeeTableBody.addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+
+                const id = button.dataset.id;
+                if (!id) return;
+
+                if (button.classList.contains('edit-btn')) {
+                    if (!isAdmin) {
+                        showError("You must be logged in as an admin to edit an employee.");
+                        return;
+                    }
+                    const employee = getEmployeesFromStorage().find(emp => emp.id === id);
+                    if (employee) {
+                        showForm(employee);
+                    } else {
+                        showError("Employee not found.");
+                    }
+                } else if (button.classList.contains('delete-btn')) {
+                    if (!isAdmin) {
+                        showError("You must be logged in as an admin to delete an employee.");
+                        return;
+                    }
+                    confirmDeleteBtn.dataset.employeeId = id;
+                    deleteModal.classList.remove('hidden');
+                } else if (button.classList.contains('view-details-btn')) {
+                    const employee = getEmployeesFromStorage().find(emp => emp.id === id);
+                    if (employee) {
+                        detailsContent.innerHTML = `
+                            <img src="${employee.employeeImage || 'https://placehold.co/160x160/e2e8f0/868e96?text=No+Img'}" alt="${employee.name} image" class="w-40 h-40 rounded-full object-cover border-4 border-blue-200 mb-4 mx-auto" onerror="this.src='https://placehold.co/160x160/e2e8f0/868e96?text=No+Img';">
+                            <h4 class="text-xl font-bold mb-2">${employee.name}</h4>
+                            <p class="text-lg font-medium text-gray-600 mb-4">ID: ${employee.id}</p>
+                            <p class="text-gray-700 text-left"><span class="font-semibold">Department:</span> ${employee.department}</p>
+                            <p class="text-gray-700 text-left"><span class="font-semibold">Role:</span> ${employee.role}</p>
+                        `;
+                        detailsModal.classList.remove('hidden');
+                    } else {
+                        showError("Employee not found.");
+                    }
+                }
+            });
+
+            confirmDeleteBtn.addEventListener('click', () => {
+                const employeeId = confirmDeleteBtn.dataset.employeeId;
+                if (!employeeId) return;
+
+                let employees = getEmployeesFromStorage();
+                const updatedEmployees = employees.filter(emp => emp.id !== employeeId);
+                saveEmployeesToStorage(updatedEmployees);
+                
+                console.log('Employee deleted successfully');
+                deleteModal.classList.add('hidden');
+                hideError();
+                renderEmployees(updatedEmployees, isAdmin);
+            });
+
+            cancelDeleteBtn.addEventListener('click', () => {
+                deleteModal.classList.add('hidden');
+            });
+
+            closeDetailsBtn.addEventListener('click', () => {
+                detailsModal.classList.add('hidden');
+            });
             
-            showStatus(`Deleting employee ${employeeId}...`, 'text-gray-600');
-            try {
-                const employeeDocRef = doc(db, `artifacts/${appId}/public/data/employees`, employeeId);
-                await deleteDoc(employeeDocRef);
-                showStatus('Employee deleted successfully!', 'text-green-600');
-            } catch (error) {
-                console.error("Error deleting employee:", error);
-                showStatus(`Error deleting employee: ${error.message}`, 'text-red-600');
-            }
-        };
-        
-        /**
-         * Shows the custom delete confirmation modal.
-         * @param {string} employeeId The ID of the employee to be deleted.
-         */
-        window.showDeleteModal = (employeeId) => {
-            if (!isFirebaseReady) {
-                showStatus('Connecting to database... please wait.', 'text-red-600');
-                return;
-            }
-            if (!isAdminAuthenticated) {
-                showStatus('You must be an authenticated admin to perform this action.', 'text-red-600');
-                return;
-            }
+            // Initial render of employees from local storage
+            renderEmployees(getEmployeesFromStorage(), isAdmin);
+        }
 
-            employeeIdToDelete = employeeId;
-            deleteModal.style.display = 'flex';
-        };
+        // Start the app when the window loads
+        window.onload = initApp;
 
-        /**
-         * Hides the custom delete confirmation modal.
-         */
-        cancelDeleteButton.addEventListener('click', () => {
-            deleteModal.style.display = 'none';
-        });
-
-        /**
-         * Confirms the deletion and calls the delete function.
-         */
-        confirmDeleteButton.addEventListener('click', async () => {
-            if (employeeIdToDelete) {
-                deleteModal.style.display = 'none';
-                await deleteEmployee(employeeIdToDelete);
-                employeeIdToDelete = null;
-            }
-        });
     </script>
 </body>
 </html>
