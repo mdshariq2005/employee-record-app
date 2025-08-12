@@ -55,8 +55,8 @@
         <!-- Container for action buttons -->
         <div class="flex justify-center space-x-4 mb-6">
             <!-- Button to log in as admin -->
-            <button id="adminButton"
-                    class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-200">
+            <button id="adminButton" disabled
+                    class="bg-gray-500 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-200">
                 Admin
             </button>
             <!-- Button to log out of admin mode -->
@@ -65,8 +65,8 @@
                 Logout
             </button>
             <!-- Button to show the form for adding a new employee (now functional for all users) -->
-            <button id="newEmployeeButton"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-200">
+            <button id="newEmployeeButton" disabled
+                    class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-200">
                 New Employee
             </button>
         </div>
@@ -244,39 +244,68 @@
         
         let employeeIdToDelete = null;
 
-        // Initialize Firebase
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            isFirebaseReady = true; // Set flag after successful initialization
-            loadingMessage.textContent = 'Fetching data...';
+        // Function to initialize the app
+        async function initApp() {
+            console.log("Attempting to initialize Firebase...");
+            loadingMessage.textContent = 'Connecting to database...';
 
-            // Set up authentication listener
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    // User is signed in.
-                    userId = user.uid;
-                    // Start listening for real-time data updates
-                    listenForEmployees();
-                } else {
-                    // User is signed out. Sign in with the custom token or anonymously.
-                    try {
-                        if (initialAuthToken) {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            await signInAnonymously(auth);
+            // Check if firebaseConfig is valid
+            if (Object.keys(firebaseConfig).length === 0) {
+                console.error("Error: Firebase configuration is missing or invalid.");
+                loadingMessage.textContent = 'Error: Firebase configuration is missing. Please check your settings.';
+                loadingMessage.classList.add('text-red-600');
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                console.log("Firebase initialized successfully.");
+
+                // Set up authentication listener
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        // User is signed in.
+                        userId = user.uid;
+                        isFirebaseReady = true;
+
+                        // Start listening for real-time data updates
+                        listenForEmployees();
+                        
+                        // Enable buttons once Firebase is ready
+                        newEmployeeButton.disabled = false;
+                        adminButton.disabled = false;
+                        
+                        // Clear loading message and show table
+                        loadingMessage.style.display = 'none';
+
+                    } else {
+                        // User is signed out. Sign in with the custom token or anonymously.
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (error) {
+                            console.error("Authentication failed:", error);
+                            loadingMessage.textContent = 'Authentication failed. Please refresh the page.';
+                            loadingMessage.classList.add('text-red-600');
                         }
-                    } catch (error) {
-                        console.error("Authentication failed:", error);
-                        showStatus("Authentication failed. Check console for details.", 'text-red-600');
                     }
-                }
-            });
-        } catch (error) {
-            console.error("Firebase initialization failed:", error);
-            showStatus("Firebase initialization failed. Check console for details.", 'text-red-600');
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                loadingMessage.textContent = 'Error: Failed to connect to database.';
+                loadingMessage.classList.add('text-red-600');
+            }
         }
+        
+        // Call the initialization function
+        initApp();
+
 
         /**
          * Displays a status message to the user.
@@ -421,7 +450,7 @@
         newEmployeeButton.addEventListener('click', () => {
             // Check if Firebase is ready before showing the form
             if (!isFirebaseReady) {
-                showStatus('Initializing app... please wait.', 'text-gray-600');
+                showStatus('Connecting to database... please wait.', 'text-gray-600');
                 return;
             }
             showForm(); // Show form, hide table
@@ -468,6 +497,10 @@
                 // Cache the data
                 employeesData = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
                 renderEmployees();
+            }, (error) => {
+                console.error("Error listening to employees:", error);
+                loadingMessage.textContent = 'Error: Failed to load employee data.';
+                loadingMessage.classList.add('text-red-600');
             });
         }
 
@@ -521,7 +554,7 @@
          */
         addButton.addEventListener('click', async () => {
             if (!isFirebaseReady) {
-                showStatus('App is still initializing. Please try again in a moment.', 'text-red-600');
+                showStatus('Connecting to database... please wait.', 'text-red-600');
                 return;
             }
 
@@ -565,7 +598,7 @@
          */
         updateButton.addEventListener('click', async () => {
             if (!isFirebaseReady) {
-                showStatus('App is still initializing. Please try again in a moment.', 'text-red-600');
+                showStatus('Connecting to database... please wait.', 'text-red-600');
                 return;
             }
             if (!isAdminAuthenticated) {
@@ -616,7 +649,7 @@
          */
         window.editEmployee = async (employeeId) => {
             if (!isFirebaseReady) {
-                showStatus('App is still initializing. Please try again in a moment.', 'text-red-600');
+                showStatus('Connecting to database... please wait.', 'text-red-600');
                 return;
             }
             if (!isAdminAuthenticated) {
@@ -664,7 +697,7 @@
          */
         window.showEmployeeDetailsModal = async (employeeId) => {
             if (!isFirebaseReady) {
-                showStatus('App is still initializing. Please try again in a moment.', 'text-red-600');
+                showStatus('Connecting to database... please wait.', 'text-red-600');
                 return;
             }
 
@@ -710,7 +743,7 @@
          */
         const deleteEmployee = async (employeeId) => {
             if (!isFirebaseReady) {
-                showStatus('App is still initializing. Please try again in a moment.', 'text-red-600');
+                showStatus('Connecting to database... please wait.', 'text-red-600');
                 return;
             }
             if (!isAdminAuthenticated) {
@@ -735,7 +768,7 @@
          */
         window.showDeleteModal = (employeeId) => {
             if (!isFirebaseReady) {
-                showStatus('App is still initializing. Please try again in a moment.', 'text-red-600');
+                showStatus('Connecting to database... please wait.', 'text-red-600');
                 return;
             }
             if (!isAdminAuthenticated) {
