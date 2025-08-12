@@ -80,6 +80,10 @@
                     <input type="text" id="role" name="role" class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" placeholder="e.g., Software Engineer" required>
                 </div>
                 <div>
+                    <label for="hire_date" class="block text-sm font-medium text-gray-700">Hire Date</label>
+                    <input type="date" id="hire_date" name="hire_date" class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" required>
+                </div>
+                <div>
                     <label for="employeeImageInput" class="block text-sm font-medium text-gray-700">Employee Image</label>
                     <input type="file" id="employeeImageInput" name="employeeImage" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                     <div id="image-preview-container" class="mt-4 flex justify-center hidden">
@@ -109,12 +113,13 @@
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hire Date</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                         <th id="admin-actions-header" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-xl hidden">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="employee-table-body" class="bg-white divide-y divide-gray-200">
-                    <tr><td colspan="6" class="text-center py-4 text-gray-500">Loading employees...</td></tr>
+                    <tr><td colspan="7" class="text-center py-4 text-gray-500">Loading employees...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -224,6 +229,16 @@
 
             return newId;
         }
+        
+        // Function to format date string for display
+        function formatDate(dateStr) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            try {
+                return new Date(dateStr).toLocaleDateString('en-US', options);
+            } catch {
+                return dateStr;
+            }
+        }
 
         // Function to render the employee table
         function renderEmployees(employees, isAdminMode) {
@@ -238,7 +253,7 @@
             }
 
             if (!employees || employees.length === 0) {
-                employeeTableBody.innerHTML = `<tr><td colspan="${isAdminMode ? 6 : 5}" class="text-center py-4 text-gray-500">No employees found.</td></tr>`;
+                employeeTableBody.innerHTML = `<tr><td colspan="${isAdminMode ? 7 : 6}" class="text-center py-4 text-gray-500">No employees found.</td></tr>`;
             } else {
                 employees.forEach(employee => {
                     const row = document.createElement('tr');
@@ -265,6 +280,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employee.name}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employee.department}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employee.role}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${formatDate(employee.hire_date || '')}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                             <button class="view-details-btn text-blue-600 hover:text-blue-800 transition-colors duration-200 font-semibold flex items-center space-x-1 mx-auto" data-id="${employee.id}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -317,6 +333,7 @@
                     employeeForm.name.value = employee.name;
                     employeeForm.department.value = employee.department;
                     employeeForm.role.value = employee.role;
+                    employeeForm.hire_date.value = employee.hire_date || '';
                     if (employee.employeeImage) {
                         imagePreview.src = employee.employeeImage;
                         imagePreviewContainer.classList.remove('hidden');
@@ -415,6 +432,7 @@
                 const name = formData.get('name');
                 const department = formData.get('department');
                 const role = formData.get('role');
+                const hire_date = formData.get('hire_date');
                 const imageFile = formData.get('employeeImage');
                 
                 let imageBase64 = employeeToEdit?.employeeImage || '';
@@ -426,7 +444,7 @@
                         // Update existing employee
                         const index = employees.findIndex(emp => emp.id === employeeToEdit.id);
                         if (index !== -1) {
-                            employees[index] = { ...employees[index], name, department, role, employeeImage: imgData };
+                            employees[index] = { ...employees[index], name, department, role, hire_date, employeeImage: imgData };
                             saveEmployeesToStorage(employees);
                             statusMessageDiv.textContent = 'Employee updated successfully!';
                         }
@@ -434,7 +452,7 @@
                         // Add new employee
                         const newId = generateUniqueId();
                         if (newId) {
-                            employees.push({ id: newId, name, department, role, employeeImage: imgData });
+                            employees.push({ id: newId, name, department, role, hire_date, employeeImage: imgData });
                             saveEmployeesToStorage(employees);
                             statusMessageDiv.textContent = 'Employee added successfully!';
                         } else {
@@ -491,6 +509,7 @@
                             <p class="text-lg font-medium text-gray-600 mb-4">ID: ${employee.id}</p>
                             <p class="text-gray-700 text-left"><span class="font-semibold">Department:</span> ${employee.department}</p>
                             <p class="text-gray-700 text-left"><span class="font-semibold">Role:</span> ${employee.role}</p>
+                            <p class="text-gray-700 text-left"><span class="font-semibold">Hire Date:</span> ${formatDate(employee.hire_date || '')}</p>
                         `;
                         detailsModal.classList.remove('hidden');
                     } else {
