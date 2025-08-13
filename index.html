@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Records</title>
+    <!-- Inter font for a modern look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Modal overlay for a clean look */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -23,7 +26,9 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            backdrop-filter: blur(5px);
         }
+        /* Modal content box styling */
         .modal-content {
             background-color: white;
             padding: 2rem;
@@ -32,6 +37,22 @@
             width: 450px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             position: relative;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        /* Style for terminated employee rows */
+        .terminated-row {
+            background-color: #fef2f2; /* Light red background */
+            color: #b91c1c; /* Dark red text */
+        }
+        .terminated-row .view-details-btn {
+            color: #b91c1c; /* Keep view details button color consistent */
+        }
+        .terminated-row .view-details-btn:hover {
+            color: #990000;
         }
     </style>
 </head>
@@ -50,6 +71,7 @@
         <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
             <button id="admin-toggle-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center space-x-2">
+                <!-- SVG icon for login/logout -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" id="admin-icon">
                     <path d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM20 21a8 8 0 1 0-16 0M22 17v-3M19 14v3"></path>
                 </svg>
@@ -62,6 +84,23 @@
                 <span>New Employee</span>
             </button>
         </div>
+
+        <!-- Employee Count Summary Section (NEW) -->
+        <div class="flex justify-center space-x-4 mb-6">
+            <div id="total-employees-card" class="bg-blue-50 p-4 rounded-lg text-center shadow-sm w-48 transition-transform transform hover:scale-105 duration-200">
+                <p class="text-sm font-semibold text-gray-500">Total Employees</p>
+                <p id="total-employees-count" class="text-3xl font-bold text-blue-600">0</p>
+            </div>
+            <div id="active-employees-card" class="bg-green-50 p-4 rounded-lg text-center shadow-sm w-48 transition-transform transform hover:scale-105 duration-200">
+                <p class="text-sm font-semibold text-gray-500">Active</p>
+                <p id="active-employees-count" class="text-3xl font-bold text-green-600">0</p>
+            </div>
+            <div id="terminated-employees-card" class="bg-red-50 p-4 rounded-lg text-center shadow-sm w-48 transition-transform transform hover:scale-105 duration-200">
+                <p class="text-sm font-semibold text-gray-500">Terminated</p>
+                <p id="terminated-employees-count" class="text-3xl font-bold text-red-600">0</p>
+            </div>
+        </div>
+
 
         <!-- Employee Form Section -->
         <div id="employee-form-container" class="p-6 bg-gray-50 rounded-xl hidden">
@@ -80,8 +119,8 @@
                     <input type="text" id="role" name="role" class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" placeholder="e.g., Software Engineer" required>
                 </div>
                 <div>
-                    <label for="hire_date" class="block text-sm font-medium text-gray-700">Hire Date</label>
-                    <input type="date" id="hire_date" name="hire_date" class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" required>
+                    <label for="hireDate" class="block text-sm font-medium text-gray-700">Hire Date</label>
+                    <input type="date" id="hireDate" name="hireDate" class="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors duration-200" required>
                 </div>
                 <div>
                     <label for="employeeImageInput" class="block text-sm font-medium text-gray-700">Employee Image</label>
@@ -114,29 +153,60 @@
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hire Date</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Termination Date</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                         <th id="admin-actions-header" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-xl hidden">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="employee-table-body" class="bg-white divide-y divide-gray-200">
-                    <tr><td colspan="7" class="text-center py-4 text-gray-500">Loading employees...</td></tr>
+                    <tr><td colspan="8" class="text-center py-4 text-gray-500">Loading employees...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <!-- Modals (Initially Hidden) -->
-    <div id="delete-modal" class="modal-overlay hidden">
+    <!-- Termination Modal -->
+    <div id="termination-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <h3 class="text-2xl font-bold mb-4 text-center">Confirm Delete</h3>
-            <p class="mb-4 text-gray-700">Are you sure you want to delete this employee record? This action cannot be undone.</p>
-            <div class="flex justify-end space-x-4">
-                <button id="cancel-delete-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
-                <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Delete</button>
+            <h3 class="text-2xl font-bold mb-4 text-center">Terminate Employee</h3>
+            <div class="space-y-4">
+                <p class="mb-2 text-gray-700">Enter the termination details below.</p>
+                <div>
+                    <label for="term-date-input" class="block text-sm font-medium text-gray-700">Termination Date</label>
+                    <input type="date" id="term-date-input" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors duration-200" required>
+                </div>
+                <div>
+                    <label for="term-reason-input" class="block text-sm font-medium text-gray-700">Reason for Termination</label>
+                    <textarea id="term-reason-input" rows="4" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors duration-200" placeholder="Enter reason..." required></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-4 mt-6">
+                <button id="cancel-termination-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="confirm-termination-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Confirm Termination</button>
             </div>
         </div>
     </div>
 
+    <!-- Rehire Modal (New) -->
+    <div id="rehire-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold mb-4 text-center">Re-hire Employee</h3>
+            <div class="space-y-4">
+                <p class="mb-2 text-gray-700">Enter the re-hire date below.</p>
+                <div>
+                    <label for="rehire-date-input" class="block text-sm font-medium text-gray-700">Re-hire Date</label>
+                    <input type="date" id="rehire-date-input" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-green-500 focus:border-green-500 shadow-sm transition-colors duration-200" required>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-4 mt-6">
+                <button id="cancel-rehire-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="confirm-rehire-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Confirm Re-hire</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
     <div id="details-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3 class="text-2xl font-bold mb-4 text-center">Employee Details</h3>
@@ -167,12 +237,18 @@
 
     <!-- App Logic -->
     <script>
+        // Global variables for app state
         let isAdmin = false;
         let employeeToEdit = null;
+        let employeeToTerminateId = null; // Variable to store ID for termination
+        let employeeToRehireId = null; // New variable to store ID for rehire
         const localStorageKey = 'employeeRecords';
-        const adminPassword = 'admin123'; // Hardcoded admin password
+        const adminPassword = 'admin123'; // Hardcoded admin password for demonstration
 
-        // Function to display errors
+        /**
+         * Utility function to show an error message.
+         * @param {string} message The error text to display.
+         */
         function showError(message) {
             const errorMessageDiv = document.getElementById('error-message');
             const errorTextSpan = document.getElementById('error-text');
@@ -180,13 +256,18 @@
             errorMessageDiv.classList.remove('hidden');
         }
 
-        // Function to hide errors
+        /**
+         * Utility function to hide the error message.
+         */
         function hideError() {
             const errorMessageDiv = document.getElementById('error-message');
             errorMessageDiv.classList.add('hidden');
         }
 
-        // Function to get data from local storage
+        /**
+         * Retrieves employee data from local storage.
+         * @returns {Array} An array of employee objects.
+         */
         function getEmployeesFromStorage() {
             try {
                 const employees = localStorage.getItem(localStorageKey);
@@ -197,7 +278,10 @@
             }
         }
 
-        // Function to save data to local storage
+        /**
+         * Saves employee data to local storage.
+         * @param {Array} employees The array of employee objects to save.
+         */
         function saveEmployeesToStorage(employees) {
             try {
                 localStorage.setItem(localStorageKey, JSON.stringify(employees));
@@ -206,46 +290,71 @@
             }
         }
 
-        // Function to generate a random 6-digit numeric ID starting with 101
+        /**
+         * Generates a unique 6-digit numeric ID for a new employee.
+         * @returns {string|null} The new unique ID or null if an ID could not be generated.
+         */
         function generateUniqueId() {
             const employees = getEmployeesFromStorage();
             const existingIds = new Set(employees.map(e => e.id));
             let newId = '';
             let attempts = 0;
-            const maxAttempts = 1000; // Limit attempts to prevent infinite loops if all IDs are taken
+            const maxAttempts = 1000;
 
             do {
-                // Generate a random number from 0 to 999
-                const randomSuffix = Math.floor(Math.random() * 1000);
-                // Pad with leading zeros to ensure it's always three digits
-                const suffixString = String(randomSuffix).padStart(3, '0');
-                newId = `101${suffixString}`;
+                const randomSuffix = Math.floor(Math.random() * 900000) + 100000;
+                newId = String(randomSuffix);
                 attempts++;
                 if (attempts >= maxAttempts) {
-                    showError("Could not generate a unique employee ID. All 101-prefixed IDs are in use.");
+                    showError("Could not generate a unique employee ID.");
                     return null;
                 }
             } while (existingIds.has(newId));
 
             return newId;
         }
-        
-        // Function to format date string for display
-        function formatDate(dateStr) {
+
+        /**
+         * Converts a YYYY-MM-DD string to a readable date format.
+         * This avoids timezone issues by not creating a new Date object unless necessary.
+         * @param {string} dateString The date in YYYY-MM-DD format.
+         * @returns {string} The formatted date string (e.g., "August 11, 2025").
+         */
+        function formatReadableDate(dateString) {
+            if (!dateString) return '';
+            const [year, month, day] = dateString.split('-').map(Number);
+            const date = new Date(year, month - 1, day); // Use local time constructor
             const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            try {
-                return new Date(dateStr).toLocaleDateString('en-US', options);
-            } catch {
-                return dateStr;
-            }
+            return date.toLocaleDateString('en-US', options);
         }
 
-        // Function to render the employee table
+        /**
+         * Renders the employee table and count summary based on the current data and admin status.
+         * @param {Array} employees The array of employee objects to display.
+         * @param {boolean} isAdminMode True if the user is an admin.
+         */
         function renderEmployees(employees, isAdminMode) {
             const employeeTableBody = document.getElementById('employee-table-body');
             const adminActionsHeader = document.getElementById('admin-actions-header');
+            
+            // NEW: Employee count elements
+            const totalCountElement = document.getElementById('total-employees-count');
+            const activeCountElement = document.getElementById('active-employees-count');
+            const terminatedCountElement = document.getElementById('terminated-employees-count');
+
             employeeTableBody.innerHTML = '';
             
+            // Calculate employee counts
+            const totalEmployees = employees.length;
+            const activeEmployees = employees.filter(emp => emp.status === 'active').length;
+            const terminatedEmployees = totalEmployees - activeEmployees;
+
+            // Update the count display
+            totalCountElement.textContent = totalEmployees;
+            activeCountElement.textContent = activeEmployees;
+            terminatedCountElement.textContent = terminatedEmployees;
+            
+            // Show or hide the admin actions header based on admin status
             if (isAdminMode) {
                 adminActionsHeader.classList.remove('hidden');
             } else {
@@ -253,48 +362,73 @@
             }
 
             if (!employees || employees.length === 0) {
-                employeeTableBody.innerHTML = `<tr><td colspan="${isAdminMode ? 7 : 6}" class="text-center py-4 text-gray-500">No employees found.</td></tr>`;
+                employeeTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">No employees found.</td></tr>`;
             } else {
                 employees.forEach(employee => {
                     const row = document.createElement('tr');
-                    row.className = 'hover:bg-gray-50 transition-colors duration-200';
+                    
+                    // Conditionally apply a style for terminated employees
+                    if (employee.status === 'terminated') {
+                        row.className = 'terminated-row hover:bg-red-100 transition-colors duration-200';
+                    } else {
+                        row.className = 'hover:bg-gray-50 transition-colors duration-200';
+                    }
+
+                    // Use the new helper function for consistent date display
+                    const hireDateDisplay = formatReadableDate(employee.hireDate);
+                    const terminationDateDisplay = formatReadableDate(employee.terminationDate);
+
                     let actionButtonsHtml = '';
                     if (isAdminMode) {
-                        actionButtonsHtml = `
-                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        if (employee.status === 'active') {
+                            actionButtonsHtml = `
                                 <div class="flex space-x-2 justify-center">
                                     <button class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded-lg text-sm transition-colors duration-200 flex items-center space-x-1" data-id="${employee.id}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
                                         <span>Edit</span>
                                     </button>
-                                    <button class="delete-btn bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-lg text-sm transition-colors duration-200 flex items-center space-x-1" data-id="${employee.id}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                                        <span>Delete</span>
+                                    <button class="terminate-btn bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-lg text-sm transition-colors duration-200 flex items-center space-x-1" data-id="${employee.id}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18.8 9.8l-1.3 1.3-4-4 1.3-1.3c.5-.5 1.3-.5 1.8 0l2.2 2.2c.5.5.5 1.3 0 1.8z"></path><path d="m14 16-4 4-1.3-1.3c-.5-.5-.5-1.3 0-1.8l2.2-2.2c.5-.5 1.3-.5 1.8 0l4 4-2.2 2.2z"></path><path d="M15 14h-2M15 16h-2M10 14H8M10 16H8"></path><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path></svg>
+                                        <span>Terminate</span>
                                     </button>
                                 </div>
-                            </td>
-                        `;
+                            `;
+                        } else { // employee.status === 'terminated'
+                            actionButtonsHtml = `
+                                <div class="flex space-x-2 justify-center">
+                                    <button class="rehire-btn bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-lg text-sm transition-colors duration-200 flex items-center space-x-1" data-id="${employee.id}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12 21h-2a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"></path><path d="m14 2 4 4-4 4"></path><path d="M18 6h-7"></path><path d="M18 10h-7"></path><path d="M14 14h-4"></path><path d="M14 18h-4"></path></svg>
+                                        <span>Re-hire</span>
+                                    </button>
+                                </div>
+                            `;
+                        }
                     }
                     row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">${employee.id}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employee.name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employee.department}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${employee.role}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">${formatDate(employee.hire_date || '')}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">${employee.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center">${employee.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center">${employee.department}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center">${employee.role}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center">${hireDateDisplay}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center">${terminationDateDisplay}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                             <button class="view-details-btn text-blue-600 hover:text-blue-800 transition-colors duration-200 font-semibold flex items-center space-x-1 mx-auto" data-id="${employee.id}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 <span>View Details</span>
                             </button>
                         </td>
-                        ${actionButtonsHtml}
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                            ${actionButtonsHtml}
+                        </td>
                     `;
                     employeeTableBody.appendChild(row);
                 });
             }
         }
 
-        // Main app initialization function
+        /**
+         * Main app initialization function. Sets up event listeners and initial rendering.
+         */
         function initApp() {
             // DOM Element References
             const adminToggleBtn = document.getElementById('admin-toggle-btn');
@@ -312,9 +446,18 @@
             const imageInput = document.getElementById('employeeImageInput');
             const imagePreviewContainer = document.getElementById('image-preview-container');
             const imagePreview = document.getElementById('image-preview');
-            const deleteModal = document.getElementById('delete-modal');
-            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            
+            const terminationModal = document.getElementById('termination-modal');
+            const termDateInput = document.getElementById('term-date-input');
+            const termReasonInput = document.getElementById('term-reason-input');
+            const cancelTerminationBtn = document.getElementById('cancel-termination-btn');
+            const confirmTerminationBtn = document.getElementById('confirm-termination-btn');
+
+            const rehireModal = document.getElementById('rehire-modal');
+            const rehireDateInput = document.getElementById('rehire-date-input');
+            const cancelRehireBtn = document.getElementById('cancel-rehire-btn');
+            const confirmRehireBtn = document.getElementById('confirm-rehire-btn');
+
             const detailsModal = document.getElementById('details-modal');
             const detailsContent = document.getElementById('details-content');
             const closeDetailsBtn = document.getElementById('close-details-btn');
@@ -324,7 +467,10 @@
             const loginPasswordBtn = document.getElementById('login-password-btn');
             const cancelPasswordBtn = document.getElementById('cancel-password-btn');
 
-            // Function to show/hide the employee form
+            /**
+             * Function to show/hide the employee form.
+             * @param {Object} employee The employee object to edit, or null for a new employee.
+             */
             function showForm(employee = null) {
                 employeeToEdit = employee;
                 if (employee) {
@@ -333,7 +479,7 @@
                     employeeForm.name.value = employee.name;
                     employeeForm.department.value = employee.department;
                     employeeForm.role.value = employee.role;
-                    employeeForm.hire_date.value = employee.hire_date || '';
+                    employeeForm.hireDate.value = employee.hireDate || '';
                     if (employee.employeeImage) {
                         imagePreview.src = employee.employeeImage;
                         imagePreviewContainer.classList.remove('hidden');
@@ -353,7 +499,9 @@
                 hideError();
             }
 
-            // Function to hide the form and show the table
+            /**
+             * Function to hide the form and show the table.
+             */
             function hideForm() {
                 employeeFormContainer.classList.add('hidden');
                 employeeTableContainer.classList.remove('hidden');
@@ -432,19 +580,25 @@
                 const name = formData.get('name');
                 const department = formData.get('department');
                 const role = formData.get('role');
-                const hire_date = formData.get('hire_date');
+                const hireDate = formData.get('hireDate'); // This is already in 'YYYY-MM-DD' format
                 const imageFile = formData.get('employeeImage');
+
+                // Basic form validation for required fields
+                if (!name || !department || !role || !hireDate) {
+                    showError("Please fill out all required fields: Name, Department, Role, and Hire Date.");
+                    statusMessageDiv.textContent = '';
+                    return;
+                }
                 
                 let imageBase64 = employeeToEdit?.employeeImage || '';
 
-                // Handle image file
                 const processAndSave = (imgData) => {
                     let employees = getEmployeesFromStorage();
                     if (employeeToEdit) {
                         // Update existing employee
                         const index = employees.findIndex(emp => emp.id === employeeToEdit.id);
                         if (index !== -1) {
-                            employees[index] = { ...employees[index], name, department, role, hire_date, employeeImage: imgData };
+                            employees[index] = { ...employees[index], name, department, role, hireDate, employeeImage: imgData };
                             saveEmployeesToStorage(employees);
                             statusMessageDiv.textContent = 'Employee updated successfully!';
                         }
@@ -452,11 +606,11 @@
                         // Add new employee
                         const newId = generateUniqueId();
                         if (newId) {
-                            employees.push({ id: newId, name, department, role, hire_date, employeeImage: imgData });
+                            employees.push({ id: newId, name, department, role, hireDate, originalHireDate: null, employeeImage: imgData, status: 'active' });
                             saveEmployeesToStorage(employees);
                             statusMessageDiv.textContent = 'Employee added successfully!';
                         } else {
-                            statusMessageDiv.textContent = 'Failed to add employee. All 101-prefixed IDs are in use.';
+                            statusMessageDiv.textContent = 'Failed to add employee. All IDs are in use.';
                         }
                     }
                     setTimeout(() => hideForm(), 2000);
@@ -493,23 +647,80 @@
                     } else {
                         showError("Employee not found.");
                     }
-                } else if (button.classList.contains('delete-btn')) {
+                } else if (button.classList.contains('terminate-btn')) {
                     if (!isAdmin) {
-                        showError("You must be logged in as an admin to delete an employee.");
+                        showError("You must be logged in as an admin to terminate an employee.");
                         return;
                     }
-                    confirmDeleteBtn.dataset.employeeId = id;
-                    deleteModal.classList.remove('hidden');
+                    // Store the ID of the employee to terminate and show the modal
+                    employeeToTerminateId = id;
+                    termDateInput.value = '';
+                    termReasonInput.value = '';
+                    terminationModal.classList.remove('hidden');
+                } else if (button.classList.contains('rehire-btn')) {
+                    if (!isAdmin) {
+                        showError("You must be logged in as an admin to re-hire an employee.");
+                        return;
+                    }
+                    employeeToRehireId = id;
+                    rehireDateInput.value = '';
+                    rehireModal.classList.remove('hidden');
                 } else if (button.classList.contains('view-details-btn')) {
                     const employee = getEmployeesFromStorage().find(emp => emp.id === id);
                     if (employee) {
+                        let terminationInfo = '';
+                        let statusBadgeHtml = '';
+
+                        // Determine the status and corresponding badge color
+                        const status = employee.originalHireDate ? 'Re-hired' : 'Hired';
+                        let statusColor = '';
+                        if (status === 'Hired') {
+                            statusColor = 'bg-blue-100 text-blue-800';
+                        } else if (status === 'Re-hired') {
+                            statusColor = 'bg-green-100 text-green-800';
+                        }
+
+                        // Check if the employee is terminated //<p class="text-red-500 font-semibold text-left mt-4">Status: Terminated</p>
+                        if (employee.status === 'terminated') {
+                            terminationInfo = `
+                                <p class="text-gray-700 text-left"><span class="font-semibold">Termination Date:</span> ${formatReadableDate(employee.terminationDate)}</p>
+                                <p class="text-gray-700 text-left"><span class="font-semibold">Reason:</span> ${employee.terminationReason}</p>
+                            `;
+                            statusBadgeHtml = `
+                                <span class="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                                    Terminated
+                                </span>
+                            `;
+                        } else {
+                             statusBadgeHtml = `
+                                <span class="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold ${statusColor}">
+                                    ${status}
+                                </span>
+                            `;
+                        }
+                        
+                        let hireDateInfo = '';
+                        // Display both original and latest hire date if they are different
+                        if (employee.originalHireDate) {
+                            hireDateInfo = `
+                                <p class="text-gray-700 text-left"><span class="font-semibold">Original Hire Date:</span> ${formatReadableDate(employee.originalHireDate)}</p>
+                                <p class="text-gray-700 text-left"><span class="font-semibold">Latest Hire Date:</span> ${formatReadableDate(employee.hireDate)}</p>
+                            `;
+                        } else {
+                            hireDateInfo = `
+                                <p class="text-gray-700 text-left"><span class="font-semibold">Hire Date:</span> ${formatReadableDate(employee.hireDate)}</p>
+                            `;
+                        }
+
                         detailsContent.innerHTML = `
                             <img src="${employee.employeeImage || 'https://placehold.co/160x160/e2e8f0/868e96?text=No+Img'}" alt="${employee.name} image" class="w-40 h-40 rounded-full object-cover border-4 border-blue-200 mb-4 mx-auto" onerror="this.src='https://placehold.co/160x160/e2e8f0/868e96?text=No+Img';">
                             <h4 class="text-xl font-bold mb-2">${employee.name}</h4>
+                            <div class="mb-4">${statusBadgeHtml}</div>
                             <p class="text-lg font-medium text-gray-600 mb-4">ID: ${employee.id}</p>
                             <p class="text-gray-700 text-left"><span class="font-semibold">Department:</span> ${employee.department}</p>
                             <p class="text-gray-700 text-left"><span class="font-semibold">Role:</span> ${employee.role}</p>
-                            <p class="text-gray-700 text-left"><span class="font-semibold">Hire Date:</span> ${formatDate(employee.hire_date || '')}</p>
+                            ${hireDateInfo}
+                            ${terminationInfo}
                         `;
                         detailsModal.classList.remove('hidden');
                     } else {
@@ -518,23 +729,80 @@
                 }
             });
 
-            confirmDeleteBtn.addEventListener('click', () => {
-                const employeeId = confirmDeleteBtn.dataset.employeeId;
-                if (!employeeId) return;
+            confirmTerminationBtn.addEventListener('click', () => {
+                const employeeId = employeeToTerminateId;
+                const termDate = termDateInput.value;
+                const termReason = termReasonInput.value;
+
+                if (!employeeId || !termDate || !termReason) {
+                    showError("Termination date and reason are required.");
+                    return;
+                }
 
                 let employees = getEmployeesFromStorage();
-                const updatedEmployees = employees.filter(emp => emp.id !== employeeId);
-                saveEmployeesToStorage(updatedEmployees);
-                
-                console.log('Employee deleted successfully');
-                deleteModal.classList.add('hidden');
-                hideError();
-                renderEmployees(updatedEmployees, isAdmin);
+                const employeeIndex = employees.findIndex(emp => emp.id === employeeId);
+
+                if (employeeIndex !== -1) {
+                    employees[employeeIndex].status = 'terminated';
+                    employees[employeeIndex].terminationDate = termDate;
+                    employees[employeeIndex].terminationReason = termReason;
+                    saveEmployeesToStorage(employees);
+                    
+                    console.log('Employee terminated successfully');
+                    terminationModal.classList.add('hidden');
+                    hideError();
+                    renderEmployees(employees, isAdmin); 
+                } else {
+                    showError("Employee to terminate not found.");
+                }
             });
 
-            cancelDeleteBtn.addEventListener('click', () => {
-                deleteModal.classList.add('hidden');
+            cancelTerminationBtn.addEventListener('click', () => {
+                terminationModal.classList.add('hidden');
             });
+
+            // New event listeners for the rehire modal
+            confirmRehireBtn.addEventListener('click', () => {
+                const employeeId = employeeToRehireId;
+                const rehireDate = rehireDateInput.value;
+
+                if (!employeeId || !rehireDate) {
+                    showError("Re-hire date is required.");
+                    return;
+                }
+
+                let employees = getEmployeesFromStorage();
+                const employeeIndex = employees.findIndex(emp => emp.id === employeeId);
+
+                if (employeeIndex !== -1) {
+                    const employee = employees[employeeIndex];
+
+                    // Save the original hire date if it's the first rehire
+                    if (!employee.originalHireDate) {
+                        employee.originalHireDate = employee.hireDate;
+                    }
+                    
+                    // Update to the latest hire date provided by the user
+                    employee.hireDate = rehireDate;
+                    employee.status = 'active';
+                    delete employee.terminationDate;
+                    delete employee.terminationReason;
+
+                    saveEmployeesToStorage(employees);
+                    
+                    console.log('Employee re-hired successfully');
+                    rehireModal.classList.add('hidden');
+                    hideError();
+                    renderEmployees(employees, isAdmin);
+                } else {
+                    showError("Employee to re-hire not found.");
+                }
+            });
+
+            cancelRehireBtn.addEventListener('click', () => {
+                rehireModal.classList.add('hidden');
+            });
+
 
             closeDetailsBtn.addEventListener('click', () => {
                 detailsModal.classList.add('hidden');
