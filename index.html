@@ -552,10 +552,14 @@ closeContactInfoBtn.addEventListener('click', () => {
             if (isTerminated) {
                 terminateBtn.classList.add('hidden');
                 rehireBtn.classList.remove('hidden');
+                reassignBtn.classList.add('hidden'); // This line hides the reassign button
             } else {
                 terminateBtn.classList.remove('hidden');
                 rehireBtn.classList.add('hidden');
+                reassignBtn.classList.remove('hidden'); // This line shows the reassign button
             }
+
+            
 
             // Render Personal Details Tab
             const personalDetailsHtml = `
