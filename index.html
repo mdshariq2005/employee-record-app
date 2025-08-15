@@ -693,8 +693,8 @@ reassignForm.addEventListener('submit', (e) => {
 function populateManagerSelect() {
     newManagerSelect.innerHTML = '';
     
-    // Get all employees who are not the current employee and could be a manager
-    const potentialManagers = employees.filter(emp => emp.id !== currentEmployee.id);
+    // Filter to get only active employees who are not the current employee
+    const potentialManagers = employees.filter(emp => emp.id !== currentEmployee.id && emp.status !== 'terminated');
     
     potentialManagers.forEach(manager => {
         const option = document.createElement('option');
