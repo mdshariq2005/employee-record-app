@@ -325,99 +325,43 @@ contactLink.addEventListener('click', (e) => {
     contactInfo.classList.remove('hidden');
 });
 
+// Function to save employees to local storage
+function saveEmployeesToLocalStorage() {
+    localStorage.setItem('employeesData', JSON.stringify(employees));
+}
+
 // Add an event listener to the "Close" button to hide the info
 closeContactInfoBtn.addEventListener('click', () => {
     contactInfo.classList.add('hidden');
 });
         // Mock data for multiple employees.
         // Updated to include 'status', 'terminationDate', 'terminationReason', and 'hireHistory'.
-        let employees = [
-            {
-                id: 'emp-001',
-                name: 'Jane Doe',
-                title: 'Lead Software Engineer',
-                department: 'Engineering',
-                manager: 'John Smith',
-                status: 'active',
-                hireHistory: [{ hireDate: '2020-03-15', terminationDate: null }],
-                email: 'jane.doe@example.com',
-                phone: '+1 (555) 123-4567',
-                address: '123 Tech Street, Silicon Valley, CA 94043',
-                image: 'https://placehold.co/100x100/A0A0A0/ffffff?text=JD', // Example image URL
-                team: [
-                    { name: 'Alice Johnson', title: 'Software Engineer' },
-                    { name: 'Bob Williams', title: 'UI/UX Designer' },
-                ]
-            },
-            {
-                id: 'emp-002',
-                name: 'John Smith',
-                title: 'Engineering Manager',
-                department: 'Engineering',
-                manager: 'Sarah Jones',
-                status: 'active',
-                hireHistory: [{ hireDate: '2018-06-01', terminationDate: null }],
-                email: 'john.smith@example.com',
-                phone: '+1 (555) 987-6543',
-                address: '456 Innovation Ave, Austin, TX 78701',
-                image: '', // No image for this employee
-                team: [
-                    { name: 'Jane Doe', title: 'Lead Software Engineer' },
-                    { name: 'Mark Davis', title: 'QA Engineer' },
-                ]
-            },
-            {
-                id: 'emp-003',
-                name: 'Sarah Jones',
-                title: 'VP of Engineering',
-                department: 'Executive',
-                manager: null,
-                status: 'terminated',
-                hireHistory: [
-                    { hireDate: '2015-01-10', terminationDate: '2022-07-20' }
-                ],
-                terminationDate: '2022-07-20',
-                terminationReason: 'Relocation',
-                email: 'sarah.jones@example.com',
-                phone: '+1 (555) 555-5555',
-                address: '789 Executive Blvd, New York, NY 10001',
-                image: 'https://placehold.co/100x100/A0A0A0/ffffff?text=SJ',
-                team: []
-            },
-            {
-                id: 'emp-004',
-                name: 'Michael Chen',
-                title: 'Data Scientist',
-                department: 'R&D',
-                manager: 'John Smith',
-                status: 'active',
-                hireHistory: [{ hireDate: '2021-09-01', terminationDate: null }],
-                email: 'michael.chen@example.com',
-                phone: '+1 (555) 321-7890',
-                address: '321 Science Rd, Palo Alto, CA 94301',
-                image: 'https://placehold.co/100x100/A0A0A0/ffffff?text=MC',
-                team: []
-            },
-            {
-                id: 'emp-005',
-                name: 'Emily White',
-                title: 'Marketing Specialist',
-                department: 'Marketing',
-                manager: 'John Smith',
-                status: 'terminated',
-                hireHistory: [
-                    { hireDate: '2019-02-14', terminationDate: '2023-01-30' },
-                    { hireDate: '2023-04-10', terminationDate: '2023-08-15' }
-                ],
-                terminationDate: '2023-08-15',
-                terminationReason: 'Voluntary Resignation',
-                email: 'emily.white@example.com',
-                phone: '+1 (555) 246-8135',
-                address: '654 Commerce St, San Francisco, CA 94107',
-                image: 'https://placehold.co/100x100/A0A0A0/ffffff?text=EW',
-                team: []
-            }
-        ];
+        // Load data from Local Storage or use mock data if none exists
+        let employees = [];
+        const savedData = localStorage.getItem('employeesData');
+        if (savedData) {
+            employees = JSON.parse(savedData);
+        } else {
+            // Use your mock data only if no saved data is found
+            employees = [
+                {
+                    id: 'emp-001',
+                    name: 'Jane Doe',
+                    title: 'Lead Software Engineer',
+                    department: 'Engineering',
+                    manager: 'John Smith',
+                    status: 'active',
+                    hireHistory: [{ hireDate: '2020-03-15', terminationDate: null }],
+                    email: 'jane.doe@example.com',
+                    phone: '+1 (555) 123-4567',
+                    address: '123 Tech Street, Silicon Valley, CA 94043',
+                    image: 'https://placehold.co/100x100/A0A0A0/ffffff?text=JD',
+                    team: []
+                },
+                // Add the rest of your mock employee data here
+                // ...
+            ];
+        }
 
         let currentEmployee = null;
 
@@ -759,8 +703,6 @@ function populateManagerSelect() {
         });
 
         
-
-        // Handle Add Employee Form Submission
        // Handle Add Employee Form Submission
         addEmployeeForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -818,6 +760,7 @@ function populateManagerSelect() {
                 };
                 employees.push(newEmployee);
                 renderEmployeeList();
+                saveEmployeesToLocalStorage(); // Add this line
                 hideModal(addModal);
                 addEmployeeForm.reset();
                 showSuccessModal('Employee Added!', `A new employee, ${newEmployee.name}, has been added to the system.`);
@@ -842,6 +785,7 @@ function populateManagerSelect() {
             }
 
             renderEmployeeList();
+            saveEmployeesToLocalStorage(); // Add this line
             hideModal(terminationModal);
             showSuccessModal('Employee Terminated!', `${currentEmployee.name} has been successfully terminated.`);
         });
@@ -871,7 +815,7 @@ function populateManagerSelect() {
 
             // Re-render the employee list
             renderEmployeeList();
-
+            saveEmployeesToLocalStorage(); // Add this line
             // Hide the rehire modal and show the success message
             hideModal(rehireModal);
             showSuccessModal('Employee Rehired!', 'The employee has been successfully rehired.');
