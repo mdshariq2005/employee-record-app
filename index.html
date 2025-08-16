@@ -761,33 +761,68 @@ function populateManagerSelect() {
         
 
         // Handle Add Employee Form Submission
+       // Handle Add Employee Form Submission
         addEmployeeForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const formData = new FormData(addEmployeeForm);
-            const newEmployee = {
-                id: generateId(),
-                name: formData.get('name'),
-                title: formData.get('title'),
-                department: formData.get('department'),
-                manager: formData.get('manager'),
-                email: formData.get('email'),
-                phone: formData.get('phone'),
-                address: formData.get('address'),
-                hireHistory: [{
-                    hireDate: formData.get('startDate'),
-                    terminationDate: null
-                }],
-                status: 'active',
-                image: '', // Placeholder, image upload logic needs more work
-                team: [] // Initially no team members
-            };
-            employees.push(newEmployee);
-            renderEmployeeList();
-            hideModal(addModal);
-            addEmployeeForm.reset();
-            showSuccessModal('Employee Added!', `A new employee, ${newEmployee.name}, has been added to the system.`);
+            
+            // Get the image file
+            const imageFile = formData.get('image');
+            
+            // Check if a file was uploaded
+            if (imageFile && imageFile.size > 0) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const newEmployee = {
+                        id: generateId(),
+                        name: formData.get('name'),
+                        title: formData.get('title'),
+                        department: formData.get('department'),
+                        manager: formData.get('manager'),
+                        email: formData.get('email'),
+                        phone: formData.get('phone'),
+                        address: formData.get('address'),
+                        hireHistory: [{
+                            hireDate: formData.get('startDate'),
+                            terminationDate: null
+                        }],
+                        status: 'active',
+                        image: event.target.result, // Set the image to the data URL
+                        team: []
+                    };
+                    employees.push(newEmployee);
+                    renderEmployeeList();
+                    hideModal(addModal);
+                    addEmployeeForm.reset();
+                    showSuccessModal('Employee Added!', `A new employee, ${newEmployee.name}, has been added to the system.`);
+                };
+                reader.readAsDataURL(imageFile); // Read the file as a data URL
+            } else {
+                // Handle case where no image is uploaded
+                const newEmployee = {
+                    id: generateId(),
+                    name: formData.get('name'),
+                    title: formData.get('title'),
+                    department: formData.get('department'),
+                    manager: formData.get('manager'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone'),
+                    address: formData.get('address'),
+                    hireHistory: [{
+                        hireDate: formData.get('startDate'),
+                        terminationDate: null
+                    }],
+                    status: 'active',
+                    image: '', // Keep image as empty string if no file
+                    team: []
+                };
+                employees.push(newEmployee);
+                renderEmployeeList();
+                hideModal(addModal);
+                addEmployeeForm.reset();
+                showSuccessModal('Employee Added!', `A new employee, ${newEmployee.name}, has been added to the system.`);
+            }
         });
-
         // Handle Terminate Employee Form Submission
         terminateForm.addEventListener('submit', (e) => {
             e.preventDefault();
