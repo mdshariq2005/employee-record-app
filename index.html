@@ -796,11 +796,13 @@ function populateManagerSelect() {
         // Close Termination Modal
         closeTerminationModalBtn.addEventListener('click', () => {
             hideModal(terminationModal);
+            showModal(detailsModal);
         });
 
         // Close Rehire Modal
         closeRehireModalBtn.addEventListener('click', () => {
             hideModal(rehireModal);
+            showModal(detailsModal);
         });
         
         // Close Success Modal
@@ -810,13 +812,14 @@ function populateManagerSelect() {
 
         // Open Termination Modal
         terminateBtn.addEventListener('click', () => {
-            hideModal(detailsModal);
+           // hideModal(detailsModal);
             showModal(terminationModal);
+            showModal(detailsModal);
         });
 
         // Open Rehire Modal
         rehireBtn.addEventListener('click', () => {
-            hideModal(detailsModal);
+           // hideModal(detailsModal);
             showModal(rehireModal);
         });
 
@@ -915,8 +918,12 @@ function populateManagerSelect() {
             }
 
             renderEmployeeList();
-            saveEmployeesToLocalStorage(); // Add this line
+            saveEmployeesToLocalStorage(); 
             hideModal(terminationModal);
+
+            // Add this line to refresh the details modal with the new data
+            renderDetailsModal(currentEmployee); 
+            
             showSuccessModal('Employee Terminated!', `${currentEmployee.name} has been successfully terminated.`);
         });
 
@@ -945,9 +952,13 @@ function populateManagerSelect() {
 
             // Re-render the employee list
             renderEmployeeList();
-            saveEmployeesToLocalStorage(); // Add this line
+            saveEmployeesToLocalStorage(); 
             // Hide the rehire modal and show the success message
             hideModal(rehireModal);
+
+            // Add this line to refresh the details modal with the new data
+            renderDetailsModal(currentEmployee); 
+
             showSuccessModal('Employee Rehired!', 'The employee has been successfully rehired.');
         });
         
