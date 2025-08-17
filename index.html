@@ -299,26 +299,29 @@
     </div>
 </div>
 <div id="reassign-modal" class="modal-container hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-    <div class="modal-content-wrapper w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div class="bg-blue-600 text-white p-6 sm:p-8 rounded-t-2xl relative flex-shrink-0">
-            <button id="close-reassign-modal-btn" class="absolute top-4 right-4 p-2 rounded-full bg-blue-500 hover:bg-blue-400 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-white"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-            <h2 class="text-2xl font-bold text-center">Reassign Manager</h2>
-        </div>
-        <form id="reassign-form">
-            <div class="p-6 sm:p-8 space-y-4">
-                <div>
-                    <label for="new-manager-select" class="block text-sm font-medium text-gray-700">Select New Manager</label>
-                    <select id="new-manager-select" name="newManager" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"></select>
+            <div class="modal-content-wrapper w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+                 <div class="bg-blue-600 text-white p-6 sm:p-8 rounded-t-2xl relative flex-shrink-0">
+                    <button id="close-reassign-modal-btn" class="absolute top-4 right-4 p-2 rounded-full bg-blue-500 hover:bg-blue-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-white"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                    <h2 class="text-2xl font-bold text-center">Reassign Manager</h2>
                 </div>
+                <form id="reassign-manager-form" class="p-6 sm:p-8 flex flex-col items-center">
+                  
+                    <div class="w-full">
+                         <label for="new-manager-select" class="block text-sm font-medium text-gray-700">Select New Manager</label>
+                        <select id="new-manager" name="new-manager" required class="w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                            </select>
+                    </div>
+                    <div class="flex justify-end pt-4 pb-6">
+                        
+                        <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+                            Confirm Reassignment
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="flex justify-end pt-4 pb-6 px-8">
-                <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-full shadow-lg hover:bg-blue-700 transition-colors">Confirm Reassignment</button>
-            </div>
-        </form>
-    </div>
-</div>
+        </div>
 <div id="edit-modal" class="modal-container hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
             <div class="modal-content-wrapper w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
                 <div class="bg-gray-800 text-white p-6 sm:p-8 rounded-t-2xl relative flex-shrink-0">
@@ -390,6 +393,10 @@ const editBtn = document.getElementById('edit-btn');
         const closeEditModalBtn = document.getElementById('close-edit-modal-btn');
         const editEmployeeForm = document.getElementById('edit-employee-form');
         const editImagePreview = document.getElementById('edit-image-preview');
+       // const reassignEmployeeNameEl = document.getElementById('reassign-employee-name');
+        const reassignManagerForm = document.getElementById('reassign-manager-form');
+        const newManagerSelectEl = document.getElementById('new-manager');
+        const cancelReassignBtn = document.getElementById('cancel-reassign-btn');
 
 // Add an event listener to the "About & Contact" link to show the info
 contactLink.addEventListener('click', (e) => {
@@ -776,48 +783,60 @@ if (employee.manager !== null) {
                 }
             }
         });
-        // Open Reassign Manager Modal
-reassignBtn.addEventListener('click', () => {
-    hideModal(detailsModal);
-    populateManagerSelect();
-    showModal(reassignModal);
-});
+        // Open Reassign Manager Modal and populate managers
+        reassignBtn.addEventListener('click', () => {
+            if (currentEmployee) {
+                //reassignEmployeeNameEl.textContent = currentEmployee.name;
+                populateManagerSelect();
+                showModal(reassignModal);
+            }
+        });
 
-// Close Reassign Manager Modal
-closeReassignModalBtn.addEventListener('click', () => {
-    hideModal(reassignModal);
-});
+// Close Reassign Modal and return to details modal
+        closeReassignModalBtn.addEventListener('click', () => {
+            hideModal(reassignModal);
+            showModal(detailsModal);
+        });
 
-// Handle Reassign Form Submission
-reassignForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (!currentEmployee) return;
 
-    const newManagerName = newManagerSelect.value;
-    
-    // Update the employee's manager
-    currentEmployee.manager = newManagerName;
+// Handle Reassign Manager Form Submission
+        reassignManagerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newManager = newManagerSelectEl.value;
 
-    // Re-render the UI
-    renderEmployeeList();
-    hideModal(reassignModal);
-    showSuccessModal('Manager Reassigned!', `${currentEmployee.name}'s manager has been changed to ${newManagerName}.`);
-});
+            if (currentEmployee && newManager) {
+                currentEmployee.manager = newManager;
+                
+                saveEmployeesToLocalStorage();
+                renderEmployeeList();
+                hideModal(reassignModal);
+                
+                // Refresh the employee details modal with the new manager
+                renderDetailsModal(currentEmployee);
+                
+                showSuccessModal('Manager Reassigned!', `${currentEmployee.name}'s manager has been successfully updated.`);
+            }
+        });
 
-// Function to populate the manager selection dropdown
-function populateManagerSelect() {
-    newManagerSelect.innerHTML = '';
-    
-    // Filter to get only active employees who are not the current employee
-    const potentialManagers = employees.filter(emp => emp.id !== currentEmployee.id && emp.status !== 'terminated');
-    
-    potentialManagers.forEach(manager => {
-        const option = document.createElement('option');
-        option.value = manager.name;
-        option.textContent = manager.name;
-        newManagerSelect.appendChild(option);
-    });
-}
+// Function to populate the manager dropdown with only active employees
+        function populateManagerSelect() {
+            newManagerSelectEl.innerHTML = '<option value="" disabled selected>Select a new manager</option>';
+            
+            // Get a list of all active employees, excluding the current employee being edited
+            const activeEmployees = employees.filter(emp => emp.status === 'active' && emp.id !== currentEmployee.id);
+            
+            // Get a unique list of names from the filtered active employees
+            const managerNames = [...new Set(activeEmployees.map(emp => emp.name))];
+
+            managerNames.sort(); // Sort names alphabetically
+
+            managerNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                newManagerSelectEl.appendChild(option);
+            });
+        }
         
         // Open Add Employee Modal
         openAddModalBtn.addEventListener('click', () => {
