@@ -72,6 +72,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Add New Employee</span>
             </button>
+            
         </div>
 
         <!-- Employee Cards Section -->
@@ -274,8 +275,12 @@
             </div>
         </div>
     </div>
-    <footer class="text-center p-4 text-gray-500 text-sm">
-    <a href="#" id="contact-link" class="hover:underline">About & Contact</a>
+ 
+<footer class="bg-white-800 text-white py-4 text-sm">
+    <div class="flex flex-wrap justify-center space-x-2 sm:space-x-4">
+        <a href="#" id="contact-link" class="text-blue-600 hover:underline font-semibold my-1">About & Contact</a>
+        <a href="#" id="reports-link" class="text-blue-600 hover:underline font-semibold my-1">Headcount Report</a>
+    </div>
 </footer>
 
 <div id="contact-info" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex justify-center items-center p-4">
@@ -377,6 +382,22 @@
                 </form>
             </div>
         </div>
+        <div id="reports-modal" class="modal-container hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div class="modal-content-wrapper w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="bg-gray-800 text-white p-6 sm:p-8 rounded-t-2xl relative flex-shrink-0">
+            <button id="close-reports-modal-btn" class="absolute top-4 right-4 p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-white"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <h2 class="text-2xl font-bold text-center">Headcount Report</h2>
+        </div>
+        <div class="p-6 sm:p-8 flex-grow overflow-y-auto">
+            <div class="report-graph-container">
+                <canvas id="headcount-chart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Get the elements for the contact link and the info modal
 const contactLink = document.getElementById('contact-link');
@@ -396,6 +417,90 @@ const editBtn = document.getElementById('edit-btn');
         const reassignManagerForm = document.getElementById('reassign-manager-form');
         const newManagerSelectEl = document.getElementById('new-manager');
         const cancelReassignBtn = document.getElementById('cancel-reassign-btn');
+        const reportsLink = document.getElementById('reports-link');
+const reportsModal = document.getElementById('reports-modal');
+const closeReportsModalBtn = document.getElementById('close-reports-modal-btn');
+const headcountChartEl = document.getElementById('headcount-chart');
+let headcountChart = null; // Variable to hold the chart instance
+let historicalData = JSON.parse(localStorage.getItem('historicalData')) || [];
+
+function updateHistoricalData() {
+    const today = new Date().toISOString().slice(0, 10);
+    const currentCount = employees.filter(emp => emp.status === 'active').length;
+    const lastEntry = historicalData[historicalData.length - 1];
+
+    if (lastEntry && lastEntry.date === today) {
+    lastEntry.count = currentCount;
+} else {
+    historicalData.push({ date: today, count: currentCount });
+}
+
+    localStorage.setItem('historicalData', JSON.stringify(historicalData));
+}
+
+//Generate Report
+function generateHeadcountReport() {
+    const dates = historicalData.map(data => {
+        const date = new Date(data.date);
+        return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+    });
+    const counts = historicalData.map(data => data.count);
+
+    if (headcountChart) {
+        headcountChart.destroy();
+    }
+
+    headcountChart = new Chart(headcountChartEl, {
+        type: 'bar',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Active Employee Headcount',
+                data: counts,
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgb(75, 192, 192)',
+                borderWidth: 1,
+                borderRadius: 5,
+                barPercentage: 0.6, // Reduces the bar width
+                categoryPercentage: 0.8 // Reduces the category width
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Employees'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        title: (tooltipItems) => {
+                            const dateStr = tooltipItems[0].label;
+                            const date = new Date(dateStr);
+                            return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
 
 // Add an event listener to the "About & Contact" link to show the info
 contactLink.addEventListener('click', (e) => {
@@ -684,6 +789,19 @@ if (employee.manager !== null) {
         }
         
         // Event Listeners
+
+// Show Reports Modal
+reportsLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    generateHeadcountReport();
+    showModal(reportsModal);
+});
+
+// Close Reports Modal
+closeReportsModalBtn.addEventListener('click', () => {
+    hideModal(reportsModal);
+});
+
 // Reusable function to set up image preview
         function setupImagePreview(imageInputId, imagePreviewId) {
             const imageInput = document.getElementById(imageInputId);
@@ -775,6 +893,7 @@ if (employee.manager !== null) {
                     reader.readAsDataURL(imageFile);
                 } else {
                     // If no new image, save other changes and re-render
+                    updateHistoricalData();
                     saveEmployeesToLocalStorage();
                     renderEmployeeList();
                     hideModal(editModal);
@@ -952,6 +1071,7 @@ if (employee.manager !== null) {
                 };
                 employees.push(newEmployee);
                 renderEmployeeList();
+                updateHistoricalData();
                 saveEmployeesToLocalStorage(); // Add this line
                 hideModal(addModal);
                 addEmployeeForm.reset();
@@ -977,6 +1097,7 @@ if (employee.manager !== null) {
             }
 
             renderEmployeeList();
+            updateHistoricalData();
             saveEmployeesToLocalStorage(); 
             hideModal(terminationModal);
 
@@ -1011,6 +1132,7 @@ if (employee.manager !== null) {
 
             // Re-render the employee list
             renderEmployeeList();
+            updateHistoricalData();
             saveEmployeesToLocalStorage(); 
             // Hide the rehire modal and show the success message
             hideModal(rehireModal);
