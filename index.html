@@ -434,28 +434,20 @@ let historicalData = JSON.parse(localStorage.getItem('historicalData')) || [];
 
 //Generate Employee ID
 function generateEMPId() {
-   // Find the highest existing numeric employee ID
-    const lastId = employees.reduce((max, emp) => {
-        // Ensure the ID is a valid number before comparing
-        const idNumber = parseInt(emp.id, 10);
-        if (isNaN(idNumber)) {
-            return max;
+        const lastId = employees.reduce((max, emp) => {
+            const idNumber = parseInt(emp.id, 10);
+            return idNumber > max ? idNumber : max;
+        }, 0);
+
+        const newIdNumber = (lastId < 101001) ? 101001 : lastId + 1;
+
+        if (newIdNumber.toString().length > 6) {
+            console.error("Employee ID limit reached.");
+            return null;
         }
-        return idNumber > max ? idNumber : max;
-    }, 0);
 
-    // Determine the next ID to use
-    // If no employees exist or the last ID is less than 101000, start at 101001
-    const newIdNumber = (lastId < 101001) ? 101001 : lastId + 1;
-
-    // Check to ensure the ID does not exceed 6 digits
-    if (newIdNumber.toString().length > 6) {
-        console.error("Employee ID limit reached.");
-        return null; // Or handle this error as needed
+        return newIdNumber.toString();
     }
-
-    return newIdNumber.toString();
-}
 
 //Validate Email 
 function validateEmail(email) {
@@ -598,7 +590,7 @@ closeContactInfoBtn.addEventListener('click', () => {
             // Use your mock data only if no saved data is found
             employees = [
                 {
-                    id: 'emp-001',
+                    id: '101001',
                     name: 'Jane Doe',
                     title: 'Lead Software Engineer',
                     department: 'Engineering',
@@ -1062,6 +1054,7 @@ function generateUniqueEmail(fullName) {
 
 // Get the new input field element
 const addIdInput = document.getElementById('add-id');
+const emailValidationMessageEl = document.getElementById('email-validation-message');
 
 // Event listener to open the modal
 openAddModalBtn.addEventListener('click', () => {
@@ -1072,6 +1065,11 @@ openAddModalBtn.addEventListener('click', () => {
     } else {
         addIdInput.value = "ID Limit Reached";
     }
+
+    // Clear the email input and validation message on form open
+    emailInput.value = '';
+    emailValidationMessageEl.textContent = '';
+    emailValidationMessageEl.classList.remove('text-green-600', 'text-red-600');
 
     // Now, show the modal
     showModal(addModal);
@@ -1132,7 +1130,7 @@ openAddModalBtn.addEventListener('click', () => {
 
         
        // Handle Add Employee Form Submission
-      addEmployeeForm.addEventListener('submit', (e) => {
+     addEmployeeForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(addEmployeeForm);
 
