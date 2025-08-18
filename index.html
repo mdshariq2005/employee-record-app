@@ -193,6 +193,7 @@
         <div>
             <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
 <input type="email" id="email" name="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" placeholder="Auto-generated from name" readonly>
+<span id="email-validation-message" class="text-xs mt-1"></span>
 </div>
         <div>
             <label for="add-phone" class="block text-sm font-medium text-gray-700">Phone</label>
@@ -454,6 +455,22 @@ function generateEMPId() {
     }
 
     return newIdNumber.toString();
+}
+
+//Validate Email 
+function validateEmail(email) {
+    const emailValidationMessageEl = document.getElementById('email-validation-message');
+    const isDuplicate = employees.some(emp => emp.email === email);
+    
+    if (isDuplicate) {
+        emailValidationMessageEl.textContent = 'This email is a duplicate. A unique number will be added upon submission.';
+        emailValidationMessageEl.classList.remove('text-green-600');
+        emailValidationMessageEl.classList.add('text-red-600');
+    } else {
+        emailValidationMessageEl.textContent = 'This email is available.';
+        emailValidationMessageEl.classList.remove('text-red-600');
+        emailValidationMessageEl.classList.add('text-green-600');
+    }
 }
 
 //Historical Data for Report
@@ -1013,9 +1030,35 @@ closeReportsModalBtn.addEventListener('click', () => {
             });
         }
         
-        // Open Add Employee Modal
+       
 
 // Event listener to open the modal
+
+//Add an Event Listener for Real-time Check
+
+
+// Event listener to trigger real-time email generation and validation
+nameInput.addEventListener('blur', () => {
+    const fullName = nameInput.value.trim();
+    if (fullName) {
+        const generatedEmail = generateUniqueEmail(fullName);
+        emailInput.value = generatedEmail;
+        validateEmail(generatedEmail);
+    } else {
+        emailInput.value = '';
+        document.getElementById('email-validation-message').textContent = '';
+    }
+});
+
+//Generate Unique Email
+function generateUniqueEmail(fullName) {
+    const nameParts = fullName.trim().toLowerCase().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+    const baseEmail = `${firstName}${lastName ? '.' + lastName : ''}`;
+    
+    return `${baseEmail}@shariq.com`;
+}
 
 // Get the new input field element
 const addIdInput = document.getElementById('add-id');
@@ -1089,23 +1132,36 @@ openAddModalBtn.addEventListener('click', () => {
 
         
        // Handle Add Employee Form Submission
-        addEmployeeForm.addEventListener('submit', (e) => {
+      addEmployeeForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(addEmployeeForm);
 
     const fullName = formData.get('name').trim();
-    const nameParts = fullName.split(' ');
-    const firstName = nameParts[0].toLowerCase();
-    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : '';
-    const generatedEmail = `${firstName}${lastName ? '.' + lastName : ''}@shariq.com`;
 
+    // 1. Generate the base email (e.g., 'john.doe') from the full name
+    const nameParts = fullName.toLowerCase().split(' ').filter(part => part.length > 0);
+    const baseName = nameParts.join('.');
+    const baseEmail = `${baseName}@shariq.com`;
+
+    // 2. Check for existing emails with the same base
+    let finalEmail = baseEmail;
+    if (employees.some(emp => emp.email === baseEmail)) {
+        let count = 1;
+        let testEmail;
+        do {
+            testEmail = `${baseName}${count}@shariq.com`;
+            count++;
+        } while (employees.some(emp => emp.email === testEmail));
+        finalEmail = testEmail;
+    }
+    
     const newEmployee = {
-        id: generateEMPId(), // Use the new function to generate the ID
+        id: addIdInput.value, // Get the ID directly from the input field
         name: fullName,
         title: formData.get('title'),
         department: formData.get('department'),
         manager: formData.get('manager'),
-        email: generatedEmail,
+        email: finalEmail, // Use the final, unique email
         phone: formData.get('phone'),
         address: formData.get('address'),
         hireHistory: [{
