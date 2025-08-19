@@ -284,6 +284,7 @@
     <div class="flex flex-wrap justify-center space-x-2 sm:space-x-4">
         <a href="#" id="contact-link" class="text-blue-600 hover:underline font-semibold my-1">About</a>
         <a href="#" id="reports-link" class="text-blue-600 hover:underline font-semibold my-1">Headcount Report</a>
+        <a href="#" id="self-service-btn" class="text-blue-600 hover:underline font-semibold my-1">Self-Service Portal</a>
     </div>
 </footer>
 
@@ -401,6 +402,89 @@
             <div class="report-graph-container">
                 <canvas id="headcount-chart"></canvas>
             </div>
+        </div>
+    </div>
+</div>
+
+<div id="self-service-modal" class="modal-container hidden fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
+    <div class="modal-content-wrapper bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl transform scale-95 transition-transform duration-300">
+        <div class="modal-header flex justify-between items-center pb-3 border-b">
+            <h3 class="text-xl font-bold">Employee Self-Service Portal</h3>
+            <button id="close-self-service-modal" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
+        </div>
+        <div class="modal-tabs flex border-b">
+            <button data-tab="personal-info" class="self-service-tab-btn active bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2 rounded-t-lg font-bold">Personal Info</button>
+            <button data-tab="pay-stubs" class="self-service-tab-btn bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2 rounded-t-lg font-bold">Pay Stubs</button>
+            <button data-tab="leave-requests" class="self-service-tab-btn bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2 rounded-t-lg font-bold">Leave Requests</button>
+        </div>
+
+        <div id="personal-info-content" class="self-service-tab-content-item active py-4">
+            <h4 class="text-lg font-semibold mb-4">Your Profile</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                    <p id="self-service-name" class="mt-1 p-2 border rounded-md bg-gray-100"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Job Title</label>
+                    <p id="self-service-job-title" class="mt-1 p-2 border rounded-md bg-gray-100"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Contact Email</label>
+                    <input type="email" id="self-service-email" class="mt-1 block w-full p-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <input type="tel" id="self-service-phone" class="mt-1 block w-full p-2 border rounded-md">
+                </div>
+            </div>
+            <div class="mt-6 text-right">
+                <button id="update-info-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-600 transition-colors">Update Info</button>
+            </div>
+        </div>
+
+        <div id="pay-stubs-content" class="self-service-tab-content-item py-4">
+            <h4 class="text-lg font-semibold mb-4">Your Pay Stubs</h4>
+            <div id="pay-stubs-list" class="space-y-4">
+                <div class="bg-gray-100 p-4 rounded-md flex justify-between items-center">
+                    <span>Pay Stub: July 2025</span>
+                    <a href="#" class="text-blue-500 hover:underline">Download PDF</a>
+                </div>
+                <div class="bg-gray-100 p-4 rounded-md flex justify-between items-center">
+                    <span>Pay Stub: June 2025</span>
+                    <a href="#" class="text-blue-500 hover:underline">Download PDF</a>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Note: This is a placeholder. A real system would securely fetch your pay stubs from a backend.</p>
+            </div>
+        </div>
+
+        <div id="leave-requests-content" class="self-service-tab-content-item py-4">
+            <h4 class="text-lg font-semibold mb-4">Submit a Leave Request</h4>
+            <form id="leave-request-form">
+                <div class="mb-4">
+                    <label for="leave-type" class="block text-sm font-medium text-gray-700">Leave Type</label>
+                    <select id="leave-type" class="mt-1 block w-full p-2 border rounded-md">
+                        <option>Vacation</option>
+                        <option>Sick Leave</option>
+                        <option>Personal Leave</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="start-date" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" id="start-date" class="mt-1 block w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label for="end-date" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" id="end-date" class="mt-1 block w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label for="leave-notes" class="block text-sm font-medium text-gray-700">Notes</label>
+                    <textarea id="leave-notes" rows="3" class="mt-1 block w-full p-2 border rounded-md"></textarea>
+                </div>
+                <div class="text-right">
+                    <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-600 transition-colors">Submit Request</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -1285,7 +1369,63 @@ openAddModalBtn.addEventListener('click', () => {
         });
         // --- END OF NEW CODE: TAB FUNCTIONALITY ---
 
+const selfServiceBtn = document.getElementById('self-service-btn');
+const selfServiceModal = document.getElementById('self-service-modal');
+const closeSelfServiceModalBtn = document.getElementById('close-self-service-modal');
+const selfServiceTabButtons = document.querySelectorAll('.self-service-tab-btn');
+const selfServiceTabContents = document.querySelectorAll('.self-service-tab-content-item');
+const updateInfoBtn = document.getElementById('update-info-btn');
+const leaveRequestForm = document.getElementById('leave-request-form');
 
+// Event listeners for the self-service modal
+selfServiceBtn.addEventListener('click', () => {
+    // For this demo, we'll just show the details for a placeholder user (e.g., John Doe)
+    const currentUser = employees.find(emp => emp.id === '1');
+    if (currentUser) {
+        document.getElementById('self-service-name').textContent = currentUser.name;
+        document.getElementById('self-service-job-title').textContent = currentUser.jobTitle;
+        document.getElementById('self-service-department').textContent = currentUser.department;
+        document.getElementById('self-service-hire-date').textContent = currentUser.hireDate;
+        document.getElementById('self-service-manager').textContent = currentUser.manager;
+        document.getElementById('self-service-email').value = currentUser.email;
+        document.getElementById('self-service-phone').value = currentUser.phone;
+    }
+    selfServiceModal.classList.remove('hidden');
+});
+
+closeSelfServiceModalBtn.addEventListener('click', () => {
+    selfServiceModal.classList.add('hidden');
+});
+
+// Tab switching logic for the self-service portal
+selfServiceTabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const tab = button.getAttribute('data-tab');
+        
+        // Remove 'active' class from all buttons and content
+        selfServiceTabButtons.forEach(btn => btn.classList.remove('active', 'bg-gray-200'));
+        selfServiceTabContents.forEach(content => content.classList.remove('active'));
+        
+        // Add 'active' class to the clicked button and its content
+        button.classList.add('active', 'bg-gray-200');
+        document.getElementById(`${tab}-content`).classList.add('active');
+    });
+});
+
+// Form submission handlers (these are placeholders)
+updateInfoBtn.addEventListener('click', () => {
+    alert("Personal information updated. In a real application, this would save to a database.");
+});
+
+leaveRequestForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const leaveType = document.getElementById('leave-type').value;
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    
+    alert(`Leave request for ${leaveType} from ${startDate} to ${endDate} submitted. A real system would process this request on the server.`);
+    leaveRequestForm.reset();
+});
         // Initial render on page load
         document.addEventListener('DOMContentLoaded', renderEmployeeList);
     </script>
